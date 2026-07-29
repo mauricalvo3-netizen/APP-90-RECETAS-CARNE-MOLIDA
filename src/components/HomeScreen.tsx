@@ -208,7 +208,7 @@ export function HomeScreen({
           </button>
         </div>
 
-        {/* PWA Premium Installation Banner */}
+        {/* PWA Direct 1-Click Installation Button */}
         <AnimatePresence>
           {!isStandalone && !isDismissed && (
             <motion.div
@@ -216,53 +216,41 @@ export function HomeScreen({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.98 }}
               transition={{ duration: 0.35, ease: 'easeOut' }}
-              className="mt-3 relative rounded-2xl bg-[#14100E] border border-[#FF5500]/50 shadow-[0_4px_24px_rgba(255,85,0,0.22)] p-3 sm:p-3.5 flex items-center justify-between gap-2.5 overflow-hidden group"
+              className="mt-3 relative rounded-2xl bg-[#14100E] border-2 border-[#FF5500]/70 shadow-[0_8px_30px_rgba(255,85,0,0.35)] p-3 sm:p-4 flex items-center justify-between gap-3 overflow-hidden group"
             >
-              {/* Subtle ambient warm lighting & glowing background effects */}
-              <div className="absolute -left-8 -top-8 w-28 h-28 bg-[#FF5500]/25 rounded-full blur-xl pointer-events-none animate-pulse"></div>
-              <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-amber-500/15 rounded-full blur-xl pointer-events-none"></div>
+              {/* Glowing Background Ambiance */}
+              <div className="absolute -left-10 -top-10 w-36 h-36 bg-[#FF5500]/30 rounded-full blur-2xl pointer-events-none animate-pulse"></div>
+              <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-amber-500/20 rounded-full blur-2xl pointer-events-none"></div>
 
-              {/* Decorative background sparkles */}
-              <Sparkles className="w-3.5 h-3.5 text-amber-400/50 absolute top-2 right-16 pointer-events-none animate-pulse" />
-              <Sparkles className="w-2.5 h-2.5 text-[#FF5500]/50 absolute bottom-2 left-20 pointer-events-none" />
-
-              {/* Left Smartphone Icon Container */}
-              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-[#FF5500] to-[#E64A00] flex items-center justify-center shrink-0 shadow-[0_2px_12px_rgba(255,85,0,0.45)] relative z-10 border border-amber-300/40">
-                <div className="w-5 h-7 rounded-md border-[1.8px] border-white/95 flex flex-col items-center justify-center relative shadow-xs">
-                  <div className="w-1.5 h-[1.5px] bg-white/90 rounded-full absolute top-0.5"></div>
-                  <ArrowDown className="w-3 h-3 text-white stroke-[2.8]" />
-                </div>
+              {/* Clean App Icon + Direct 1-Click Big Button */}
+              <div className="flex items-center gap-3 relative z-10 min-w-0">
+                <img
+                  src="/icon.png"
+                  alt="90 Recetas"
+                  referrerPolicy="no-referrer"
+                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover shadow-md border border-amber-400/50 bg-stone-900 shrink-0"
+                />
               </div>
 
-              {/* Middle Text Content */}
-              <div className="flex-1 min-w-0 relative z-10">
-                <h3 className="text-xs sm:text-sm font-extrabold text-white tracking-tight leading-tight font-display">
-                  Instala la app
-                </h3>
-                <p className="text-[10px] sm:text-[11px] font-medium text-stone-300 leading-tight mt-0.5 truncate">
-                  Accede más rápido desde tu celular
-                </p>
-              </div>
+              {/* Big Direct Install Button (No overlapping text) */}
+              <button
+                onClick={handleInstallClick}
+                className="flex-1 bg-gradient-to-r from-[#FF5500] via-[#FF6500] to-[#FF7A00] hover:from-[#FF6500] hover:to-[#FF8800] active:scale-95 text-white text-sm sm:text-base font-extrabold py-3 px-4 rounded-xl shadow-[0_4px_20px_rgba(255,85,0,0.5)] transition-all cursor-pointer border border-amber-300/40 flex items-center justify-center gap-2 relative z-10"
+                id="pwa-install-banner-btn"
+              >
+                <Download className="w-5 h-5 text-white stroke-[2.5]" />
+                <span className="tracking-wide">INSTALAR AHORA</span>
+              </button>
 
-              {/* Right Action Buttons */}
-              <div className="flex items-center gap-2 shrink-0 relative z-10">
-                <button
-                  onClick={handleInstallClick}
-                  className="bg-gradient-to-r from-[#FF5500] via-[#FF6500] to-[#FF7A00] hover:from-[#FF6500] hover:to-[#FF8800] active:scale-95 text-white text-xs font-extrabold px-3.5 sm:px-4 py-1.5 rounded-full shadow-[0_2px_12px_rgba(255,85,0,0.4)] transition-all cursor-pointer border border-amber-300/30 shrink-0 hover:shadow-[0_4px_16px_rgba(255,85,0,0.6)]"
-                  id="pwa-install-banner-btn"
-                >
-                  Instalar
-                </button>
-
-                <button
-                  onClick={handleDismiss}
-                  className="w-6 h-6 rounded-full bg-stone-800/80 hover:bg-stone-700 text-stone-300 hover:text-white flex items-center justify-center transition-colors shrink-0 text-xs cursor-pointer border border-stone-700/60"
-                  id="pwa-install-banner-close-btn"
-                  aria-label="Cerrar banner"
-                >
-                  <X className="w-3.5 h-3.5 stroke-[2.5]" />
-                </button>
-              </div>
+              {/* Close Button */}
+              <button
+                onClick={handleDismiss}
+                className="w-8 h-8 rounded-full bg-stone-800/90 hover:bg-stone-700 text-stone-400 hover:text-white flex items-center justify-center transition-colors text-xs cursor-pointer border border-stone-700/60 z-20 shrink-0"
+                id="pwa-install-banner-close-btn"
+                aria-label="Cerrar"
+              >
+                <X className="w-4 h-4 stroke-[2.5]" />
+              </button>
             </motion.div>
           )}
         </AnimatePresence>

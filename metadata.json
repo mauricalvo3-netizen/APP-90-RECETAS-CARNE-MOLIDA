@@ -1,5 +1,5 @@
 {
-  "name": "90 Recetas con Carne Molida",
+  "name": "90 Recetas",
   "description": "Asistente culinario para decidir en segundos qué cocinar hoy con carne molida.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
