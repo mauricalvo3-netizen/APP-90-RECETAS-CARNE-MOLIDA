@@ -1,7 +1,75 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Clock, Users, ChefHat, Check, Sparkles, Heart, Flame, ChevronLeft, ChevronRight, X, ListChecks, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, Clock, Users, ChefHat, Check, Sparkles, Heart, ChevronLeft, ChevronRight, X, ListChecks, ShoppingCart, Star, BarChart3, BookOpen, UtensilsCrossed } from 'lucide-react';
 import { SampleRecipe, getRecipeImageSrc } from '../data/recipes';
+
+// Helper to extract ingredient details & assign an appropriate food emoji
+function parseIngredientDetails(ingredient: string) {
+  const lower = ingredient.toLowerCase();
+  let emoji = '🥗';
+  let qtySubtext = 'Porción adecuada';
+
+  if (lower.includes('carne') || lower.includes('pato') || lower.includes('pollo') || lower.includes('ternera') || lower.includes('cerdo')) {
+    emoji = '🥩';
+    const match = ingredient.match(/(\d+\s*(?:g|kg|gramos|kilos)?)/i);
+    qtySubtext = match ? `${match[1]} gramos` : 'Proteína fresca';
+  } else if (lower.includes('huevo')) {
+    emoji = '🥚';
+    const match = ingredient.match(/(\d+)/);
+    qtySubtext = match ? `${match[1]} ${parseInt(match[1]) === 1 ? 'unidad' : 'unidades'}` : '1 unidad';
+  } else if (lower.includes('pan') || lower.includes('harina') || lower.includes('migas')) {
+    emoji = '🥣';
+    if (lower.includes('cucharad')) {
+      const match = ingredient.match(/(\d+)/);
+      qtySubtext = match ? `${match[1]} cucharadas` : '3 cucharadas';
+    } else {
+      qtySubtext = 'Ingrediente seco';
+    }
+  } else if (lower.includes('cebolla')) {
+    emoji = '🧅';
+    qtySubtext = '1 unidad mediana';
+  } else if (lower.includes('ajo')) {
+    emoji = '🧄';
+    const match = ingredient.match(/(\d+)/);
+    qtySubtext = match ? `${match[1]} dientes` : '2 dientes';
+  } else if (lower.includes('sal') || lower.includes('pimienta') || lower.includes('nuez') || lower.includes('especia') || lower.includes('hierba')) {
+    emoji = '🧂';
+    qtySubtext = 'Al gusto';
+  } else if (lower.includes('jamón') || lower.includes('tocino') || lower.includes('panceta')) {
+    emoji = '🥓';
+    const match = ingredient.match(/(\d+\s*(?:g|gramos)?)/i);
+    qtySubtext = match ? `${match[1]} gramos` : 'Rebanadas frescas';
+  } else if (lower.includes('queso') || lower.includes('mozzarella') || lower.includes('parmesano')) {
+    emoji = '🧀';
+    const match = ingredient.match(/(\d+\s*(?:g|gramos)?)/i);
+    qtySubtext = match ? `${match[1]} gramos` : 'En rebanadas';
+  } else if (lower.includes('aceite') || lower.includes('oliva') || lower.includes('mantequilla')) {
+    emoji = '🫒';
+    qtySubtext = 'Al gusto';
+  } else if (lower.includes('tomate') || lower.includes('salsa')) {
+    emoji = '🍅';
+    qtySubtext = 'Fresco picado';
+  } else if (lower.includes('limón') || lower.includes('lima')) {
+    emoji = '🍋';
+    qtySubtext = 'Al gusto';
+  }
+
+  return { emoji, qtySubtext };
+}
+
+// Helper to assign a miniature emoji to step preparation
+function getStepMiniatureEmoji(step: string, idx: number) {
+  const lower = step.toLowerCase();
+  if (lower.includes('mezcla') || lower.includes('integra') || lower.includes('revuelve') || lower.includes('tazón')) return '🥣';
+  if (lower.includes('extienda') || lower.includes('estira') || lower.includes('masa') || lower.includes('papel')) return '🫓';
+  if (lower.includes('cubre') || lower.includes('jamón') || lower.includes('queso') || lower.includes('rellen')) return '🧀';
+  if (lower.includes('enrolla') || lower.includes('dobla') || lower.includes('forma')) return '🌀';
+  if (lower.includes('colócalo') || lower.includes('bandeja') || lower.includes('horno') || lower.includes('hornea')) return '🍳';
+  if (lower.includes('sirva') || lower.includes('corta') || lower.includes('decora')) return '🍽️';
+  
+  const defaultEmojis = ['🥣', '🫓', '🧀', '🌀', '🍳', '⏲️'];
+  return defaultEmojis[idx % defaultEmojis.length];
+}
 
 interface RecipeDetailScreenProps {
   recipe: SampleRecipe;
@@ -49,10 +117,11 @@ export function RecipeDetailScreen({
   };
 
   const name = recipe.nombre || recipe.title;
-  const timeText = recipe.tiempoTexto || recipe.prepTime;
+  const timeText = recipe.tiempoTexto || recipe.prepTime || '20 min de preparación + 40 min en el horno = 60 min en total';
   const ingredientsList = recipe.ingredientes || recipe.ingredients || [];
   const stepsList = recipe.preparacion || recipe.steps || [];
   const tagText = recipe.categoria || recipe.tag || 'Rollos y rollitos';
+  const servingsText = recipe.servings || '4 a 6 porciones';
 
   const handleStartCookingMode = () => {
     setCurrentStepIndex(0);
@@ -76,38 +145,45 @@ export function RecipeDetailScreen({
   if (isCookingMode) {
     const totalSteps = stepsList.length;
     const currentStepText = stepsList[currentStepIndex] || '';
+    const tipsList = [
+      'Usa las manos limpias para integrar mejor los ingredientes sin apelmazar.',
+      'Asegúrate de cocinar a fuego medio constante para mantener los jugos.',
+      'Sazona suavemente en cada etapa para lograr un sabor equilibrado y profundo.',
+      'Deja reposar un par de minutos al finalizar para potenciar todos los aromas.',
+      'Puedes acompañar con tu guarnición preferida o salsa fresca de la casa.'
+    ];
 
     return (
-      <div className="flex-1 flex flex-col justify-between max-w-md mx-auto w-full bg-stone-900 text-stone-100 min-h-full relative overflow-hidden">
+      <div className="flex-1 flex flex-col justify-between max-w-md mx-auto w-full bg-[#0B0B0B] text-stone-100 min-h-full relative overflow-hidden font-sans">
+        {/* Subtle Ambient Orange Glow Background */}
+        <div className="absolute -top-28 left-1/2 -translate-x-1/2 w-80 h-80 bg-orange-600/15 blur-[100px] pointer-events-none rounded-full" />
+
         {/* Header Bar */}
-        <div className="p-4 bg-stone-950/90 border-b border-stone-800 flex items-center justify-between gap-3 shadow-md">
+        <div className="p-3.5 sm:p-4 bg-[#120E0D]/90 border-b border-orange-500/20 flex items-center justify-between gap-2.5 shadow-md backdrop-blur-md relative z-10">
           <button
             onClick={handleExitCookingMode}
-            className="flex items-center gap-1.5 text-stone-300 hover:text-white bg-stone-800 hover:bg-stone-700 font-bold text-xs px-3 py-2 rounded-xl transition-colors cursor-pointer border border-stone-700"
+            className="flex items-center gap-1.5 text-stone-300 hover:text-white bg-[#1C1816] hover:bg-[#26201D] font-bold text-xs px-3.5 py-1.5 rounded-full transition-colors cursor-pointer border border-stone-800 shadow-2xs"
             id="exit-cooking-mode-btn"
           >
-            <X className="w-4 h-4 text-orange-400" />
+            <X className="w-3.5 h-3.5 text-orange-400" />
             <span>Salir</span>
           </button>
 
           <div className="flex-1 text-center truncate px-1">
-            <span className="text-[10px] uppercase font-extrabold tracking-widest text-orange-500 block">
-              Modo cocina
-            </span>
-            <h2 className="text-sm font-bold text-white truncate font-display">
+            <h2 className="text-xs sm:text-sm font-bold text-stone-100 truncate font-display tracking-tight">
               {name}
             </h2>
           </div>
 
           <button
             onClick={() => setShowIngredientsModal(!showIngredientsModal)}
-            className="flex items-center gap-1.5 text-amber-300 bg-amber-950/80 hover:bg-amber-900/80 border border-amber-700/60 font-bold text-xs px-2.5 py-2 rounded-xl transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-amber-200 bg-[#1C1816] hover:bg-[#26201D] border border-amber-500/30 font-bold text-xs px-3 py-1.5 rounded-full transition-colors cursor-pointer shadow-2xs"
             id="cooking-mode-ingredients-btn"
             title="Ver ingredientes"
           >
-            <ListChecks className="w-4 h-4 text-amber-400" />
-            <span className="hidden sm:inline">Ingredientes</span>
-            <span className="text-[10px] bg-amber-800 text-amber-100 px-1.5 py-0.5 rounded-full font-mono">
+            <ListChecks className="w-3.5 h-3.5 text-orange-400" />
+            <span className="text-xs font-semibold">Ingredientes</span>
+            <span className="text-[10px] bg-[#FF5500] text-white px-1.5 py-0.2 rounded-full font-bold ml-0.5">
               {ingredientsList.length}
             </span>
           </button>
@@ -120,7 +196,7 @@ export function RecipeDetailScreen({
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="absolute top-16 left-3 right-3 z-30 bg-stone-950 border border-amber-500/40 rounded-2xl p-4 shadow-2xl max-h-[70vh] flex flex-col space-y-3"
+              className="absolute top-16 left-3 right-3 z-30 bg-[#14100E] border border-orange-500/40 rounded-2xl p-4 shadow-2xl max-h-[70vh] flex flex-col space-y-3"
             >
               <div className="flex items-center justify-between border-b border-stone-800 pb-2">
                 <h3 className="text-sm font-bold text-amber-400 font-display flex items-center gap-2">
@@ -128,7 +204,7 @@ export function RecipeDetailScreen({
                 </h3>
                 <button
                   onClick={() => setShowIngredientsModal(false)}
-                  className="text-stone-400 hover:text-white p-1 rounded-lg bg-stone-800"
+                  className="text-stone-400 hover:text-white p-1 rounded-lg bg-[#1C1816]"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -143,12 +219,12 @@ export function RecipeDetailScreen({
                       onClick={() => toggleIngredient(idx)}
                       className={`flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all ${
                         isChecked
-                          ? 'bg-stone-900 border-stone-800 text-stone-500 line-through'
-                          : 'bg-stone-900/90 border-stone-800 text-stone-200'
+                          ? 'bg-[#1C1816]/50 border-stone-800 text-stone-500 line-through'
+                          : 'bg-[#1C1816] border-stone-800/80 text-stone-200'
                       }`}
                     >
                       <div className={`mt-0.5 w-4 h-4 rounded-md flex items-center justify-center border transition-colors flex-shrink-0 ${
-                        isChecked ? 'bg-orange-600 border-orange-600 text-white' : 'border-stone-600 bg-stone-800'
+                        isChecked ? 'bg-[#FF5500] border-[#FF5500] text-white' : 'border-stone-600 bg-stone-800'
                       }`}>
                         {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
                       </div>
@@ -162,24 +238,24 @@ export function RecipeDetailScreen({
         </AnimatePresence>
 
         {/* Cooking Step Main Content */}
-        <div className="flex-1 flex flex-col justify-between p-5 space-y-4 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 flex flex-col justify-between p-4 sm:p-5 space-y-3 sm:space-y-4 overflow-y-auto custom-scrollbar relative z-10">
           {/* Progress Indicator */}
-          <div className="space-y-2 pt-1">
-            <div className="flex items-center justify-between text-xs font-bold text-stone-400">
-              <span className="text-orange-400 font-mono text-sm">
+          <div className="space-y-2 pt-1 px-0.5">
+            <div className="flex items-center justify-between text-xs font-extrabold">
+              <span className="text-[#FF6500] font-bold text-xs sm:text-sm tracking-wide">
                 Paso {currentStepIndex + 1} de {totalSteps}
               </span>
-              <span className="text-stone-500">
+              <span className="text-stone-400 font-medium text-xs">
                 {Math.round(((currentStepIndex + 1) / totalSteps) * 100)}% completado
               </span>
             </div>
-            {/* Progress Bar */}
-            <div className="w-full bg-stone-800 h-2 rounded-full overflow-hidden">
+            {/* Progress Track */}
+            <div className="w-full bg-[#1C1816] h-2 rounded-full overflow-hidden border border-stone-800/80 p-[1px]">
               <motion.div
-                className="bg-gradient-to-r from-orange-500 to-amber-500 h-full rounded-full"
+                className="bg-gradient-to-r from-[#FF5500] to-[#FF8A1A] h-full rounded-full shadow-[0_0_12px_rgba(255,85,0,0.6)]"
                 initial={{ width: 0 }}
                 animate={{ width: `${((currentStepIndex + 1) / totalSteps) * 100}%` }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
               />
             </div>
           </div>
@@ -187,39 +263,59 @@ export function RecipeDetailScreen({
           {/* Current Active Step Highlighted Card */}
           <motion.div
             key={currentStepIndex}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.25 }}
-            className="flex-1 bg-stone-950/80 border-2 border-orange-500/80 rounded-3xl p-5 sm:p-6 shadow-xl flex flex-col justify-between space-y-4 my-2"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="flex-1 bg-[#14100E] border border-orange-500/35 rounded-[28px] p-5 sm:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.85)] flex flex-col justify-between space-y-4 my-1 relative overflow-hidden"
           >
-            <div className="space-y-3">
-              <div className="inline-flex items-center gap-2 bg-orange-600 text-white text-xs font-extrabold px-3 py-1 rounded-full shadow-xs">
-                <Flame className="w-3.5 h-3.5 fill-white" />
-                <span>Paso {currentStepIndex + 1}</span>
+            <div className="space-y-4">
+              {/* Paso Badge */}
+              <div>
+                <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-[#FF5500] to-[#FF7700] text-white text-xs font-extrabold px-3 py-1 rounded-full shadow-[0_4px_14px_rgba(255,85,0,0.35)]">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+                  <span>Paso {currentStepIndex + 1}</span>
+                </div>
               </div>
 
-              {/* Large Step Description */}
-              <p className="text-lg sm:text-xl font-medium text-stone-100 leading-relaxed font-body">
+              {/* Step Description Text - High Contrast, SemiBold */}
+              <p className="text-base sm:text-lg font-semibold text-stone-100 leading-relaxed font-sans tracking-wide">
                 {currentStepText}
               </p>
-            </div>
 
-            <div className="text-[11px] text-stone-500 italic pt-2 border-t border-stone-800/80">
-              Usa los botones de abajo para navegar entre los pasos de preparación.
+              {/* Step Gastronomic Image */}
+              <div className="rounded-2xl overflow-hidden border border-stone-800/80 shadow-lg aspect-[16/9] sm:aspect-[16/10] bg-stone-900 group relative">
+                <img
+                  src={getRecipeImageSrc(recipe)}
+                  alt={`Paso ${currentStepIndex + 1}`}
+                  className="w-full h-full object-cover brightness-[0.95] contrast-[1.05] group-hover:scale-102 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+              </div>
+
+              {/* Chef Tip Card */}
+              <div className="bg-[#0A0807] border border-stone-800/80 rounded-2xl p-3.5 space-y-1.5 shadow-inner">
+                <div className="flex items-center gap-2 text-amber-400 font-extrabold text-xs">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Consejo del chef</span>
+                </div>
+                <p className="text-stone-400 text-xs leading-relaxed font-medium">
+                  {tipsList[currentStepIndex % tipsList.length]}
+                </p>
+              </div>
             </div>
           </motion.div>
 
           {/* Steps Carousel Dots Preview */}
-          <div className="flex items-center justify-center gap-1.5 py-1">
+          <div className="flex items-center justify-center gap-2 py-1">
             {stepsList.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setCurrentStepIndex(idx)}
-                className={`h-2 rounded-full transition-all cursor-pointer ${
+                className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
                   idx === currentStepIndex
-                    ? 'w-6 bg-orange-500'
-                    : 'w-2 bg-stone-700 hover:bg-stone-600'
+                    ? 'w-7 bg-gradient-to-r from-[#FF5500] to-[#FF8A1A] shadow-[0_0_8px_rgba(255,85,0,0.6)]'
+                    : 'w-2 bg-[#221D1B] hover:bg-stone-700'
                 }`}
                 title={`Ir al paso ${idx + 1}`}
               />
@@ -228,46 +324,46 @@ export function RecipeDetailScreen({
         </div>
 
         {/* Bottom Step Navigation Bar */}
-        <div className="p-4 bg-stone-950 border-t border-stone-800 grid grid-cols-2 gap-3">
+        <div className="p-4 bg-[#120E0D] border-t border-stone-800/80 grid grid-cols-2 gap-3 relative z-10">
           <button
             onClick={handlePrevStep}
             disabled={currentStepIndex === 0}
             className={`flex items-center justify-center gap-2 font-bold py-3.5 px-4 rounded-2xl text-sm transition-all cursor-pointer ${
               currentStepIndex === 0
-                ? 'bg-stone-800 text-stone-600 cursor-not-allowed opacity-50'
-                : 'bg-stone-800 hover:bg-stone-700 text-stone-100 border border-stone-700 active:scale-95'
+                ? 'bg-[#1A1614] text-stone-600 border border-stone-900 cursor-not-allowed opacity-40'
+                : 'bg-[#1C1816] hover:bg-[#26201D] text-stone-200 border border-stone-800 active:scale-98 shadow-sm'
             }`}
             id="cooking-mode-prev-btn"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-4 h-4" />
             <span>Anterior</span>
           </button>
 
           <button
             onClick={handleNextStep}
             disabled={currentStepIndex === totalSteps - 1}
-            className={`flex items-center justify-center gap-2 font-bold py-3.5 px-4 rounded-2xl text-sm transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2 font-extrabold py-3.5 px-4 rounded-2xl text-sm transition-all cursor-pointer relative overflow-hidden ${
               currentStepIndex === totalSteps - 1
-                ? 'bg-amber-600/50 text-amber-200 cursor-not-allowed opacity-60'
-                : 'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white shadow-md active:scale-95'
+                ? 'bg-amber-900/40 text-amber-200/50 cursor-not-allowed opacity-50 border border-amber-900/30'
+                : 'bg-gradient-to-r from-[#FF5500] via-[#FF6600] to-[#FF8A1A] hover:from-[#FF6600] hover:to-[#FF9525] text-white shadow-[0_8px_20px_rgba(255,85,0,0.35)] active:scale-98 border-t border-white/20'
             }`}
             id="cooking-mode-next-btn"
           >
             <span>{currentStepIndex === totalSteps - 1 ? 'Último paso' : 'Siguiente'}</span>
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
     );
   }
 
-  // STANDARD RECIPE DETAIL VIEW
+  // STANDARD PREMIUM RECIPE DETAIL VIEW (WARM CREAM CANVASES AS PER REFERENCE IMAGE)
   return (
-    <div className="flex-1 flex flex-col justify-between max-w-md mx-auto w-full bg-gradient-to-b from-amber-50/90 via-orange-50/30 to-amber-100/60 min-h-full">
+    <div className="flex-1 flex flex-col justify-between max-w-md mx-auto w-full bg-[#FAF7F2] min-h-full">
       {/* Scrollable Recipe Content */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-4 space-y-6 custom-scrollbar pb-6">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-5 py-4 space-y-5 custom-scrollbar pb-6">
         
-        {/* Top Floating Back Bar */}
+        {/* Top Header Controls Bar */}
         <motion.div 
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -276,7 +372,7 @@ export function RecipeDetailScreen({
         >
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-stone-800 hover:text-orange-700 font-bold text-xs sm:text-sm bg-white/90 backdrop-blur-md px-3.5 py-2 rounded-full border border-amber-200 shadow-xs active:scale-95 transition-all cursor-pointer"
+            className="flex items-center gap-1.5 text-stone-900 hover:text-orange-600 font-extrabold text-xs sm:text-sm bg-white/95 backdrop-blur-md px-4 py-2 rounded-full border border-stone-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.06)] active:scale-95 transition-all cursor-pointer"
             id="detail-top-back-btn"
           >
             <ArrowLeft className="w-4 h-4 text-orange-600" />
@@ -284,177 +380,217 @@ export function RecipeDetailScreen({
           </button>
 
           <div className="flex items-center gap-2">
-            {/* Heart Favorite Button in Header */}
+            {/* Favorita Badge */}
+            {isFavorite && (
+              <span className="bg-white/95 text-red-600 font-extrabold px-3 py-1.5 rounded-full border border-red-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.06)] flex items-center gap-1.5 text-xs">
+                <Heart className="w-3.5 h-3.5 fill-red-500 text-red-500" />
+                <span>Favorita</span>
+              </span>
+            )}
+
+            {/* Category Tag Pill */}
+            <span className="text-xs font-extrabold bg-[#FEF3D6] text-amber-950 px-3.5 py-1.5 rounded-full border border-amber-300/70 flex items-center gap-1.5 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+              <ChefHat className="w-3.5 h-3.5 text-orange-600" />
+              <span>{tagText}</span>
+            </span>
+
+            {/* Heart Favorite Floating Circle */}
             {onToggleFavorite && (
               <button
                 onClick={onToggleFavorite}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border shadow-xs active:scale-90 transition-all cursor-pointer font-bold text-xs ${
-                  isFavorite
-                    ? 'bg-red-50 border-red-200 text-red-600'
-                    : 'bg-white/90 backdrop-blur-md border-amber-200 text-stone-700 hover:text-red-500'
-                }`}
+                className="w-9 h-9 rounded-full bg-white/95 backdrop-blur-md border border-stone-200/80 shadow-[0_2px_8px_rgba(0,0,0,0.08)] flex items-center justify-center active:scale-90 transition-transform cursor-pointer"
                 id="detail-favorite-btn"
                 title={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
               >
                 <Heart
                   className={`w-4 h-4 transition-transform ${
-                    isFavorite ? 'fill-red-500 text-red-500 scale-110' : 'text-stone-500'
+                    isFavorite ? 'fill-red-500 text-red-500 scale-110' : 'text-stone-400 hover:text-red-500'
                   }`}
                 />
-                <span className="hidden sm:inline">{isFavorite ? 'Favorita' : 'Favorito'}</span>
               </button>
             )}
-
-            <span className="text-xs font-bold bg-amber-200/90 text-amber-950 px-3 py-1.5 rounded-full border border-amber-300 flex items-center gap-1 shadow-2xs">
-              <Sparkles className="w-3.5 h-3.5 text-orange-600" />
-              {tagText}
-            </span>
           </div>
         </motion.div>
 
-        {/* 1. Large Recipe Photo with rounded corners */}
+        {/* 1. Photography Section */}
         <motion.div 
-          initial={{ opacity: 0, scale: 0.96 }}
+          initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4 }}
-          className="relative rounded-3xl overflow-hidden shadow-lg border border-amber-200/80 aspect-[4/3] bg-stone-100 group"
+          className="relative rounded-3xl overflow-hidden shadow-[0_15px_35px_rgba(0,0,0,0.12)] border border-stone-200/60 aspect-[4/3] bg-stone-900 group"
         >
           <img
             src={getRecipeImageSrc(recipe)}
             alt={name}
             referrerPolicy="no-referrer"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-out brightness-[0.98] contrast-[1.06]"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-stone-950/60 via-transparent to-black/10"></div>
-          
-          <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-amber-900 shadow-sm flex items-center gap-1.5 border border-amber-200/50">
-            <ChefHat className="w-3.5 h-3.5 text-orange-600" />
-            <span>{tagText}</span>
-          </div>
-
-          {/* Heart Favorite Button Overlay on Photo */}
-          {onToggleFavorite && (
-            <button
-              onClick={onToggleFavorite}
-              className="absolute top-3 right-3 bg-white/90 backdrop-blur-md p-2 rounded-full shadow-md border border-amber-200/50 active:scale-90 transition-transform cursor-pointer"
-              id="detail-photo-favorite-btn"
-              title={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-            >
-              <Heart
-                className={`w-5 h-5 ${
-                  isFavorite ? 'fill-red-500 text-red-500 scale-110' : 'text-stone-600 hover:text-red-500'
-                }`}
-              />
-            </button>
-          )}
+          {/* Subtle bottom gradient mask for smooth text integration */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#FAF7F2] via-transparent to-black/10"></div>
         </motion.div>
 
-        {/* 2. Recipe Title & Modo Cocina Hero Button */}
+        {/* 2. Recipe Title & Rating */}
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
-          className="space-y-3 text-left"
+          className="space-y-1.5 text-left pt-1"
         >
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-900 font-display leading-tight tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1F1A17] font-display leading-tight tracking-tight">
             {name}
           </h1>
 
-          {/* Prominent "Modo cocina" Action Button */}
-          {stepsList.length > 0 && (
-            <button
-              onClick={handleStartCookingMode}
-              className="w-full bg-gradient-to-r from-orange-600 via-amber-600 to-orange-500 hover:from-orange-700 hover:to-amber-700 active:scale-[0.98] text-white font-bold py-3 px-5 rounded-2xl shadow-md shadow-orange-600/20 transition-all flex items-center justify-center gap-2.5 text-sm sm:text-base cursor-pointer border border-orange-400/30"
-              id="start-modo-cocina-btn"
-            >
-              <ChefHat className="w-5 h-5 text-amber-200" />
-              <span>Modo cocina</span>
-              <span className="text-[10px] bg-amber-200/30 font-semibold px-2 py-0.5 rounded-md uppercase tracking-wider ml-1">
-                Paso a paso
-              </span>
-            </button>
-          )}
+          {/* Rating */}
+          <div className="flex items-center gap-1.5 text-xs font-bold text-stone-800 pt-0.5">
+            <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+            <span className="text-sm font-extrabold text-[#1F1A17]">4.9</span>
+            <span className="text-stone-400 font-normal">(120)</span>
+          </div>
         </motion.div>
 
-        {/* 3. Available Recipe Info (Prep Time & Servings) - Only if available */}
-        {(timeText || recipe.servings) && (
-          <motion.div 
+        {/* 3. Modo Cocina Hero Button */}
+        {stepsList.length > 0 && (
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.15 }}
-            className="flex flex-col sm:flex-row sm:items-center gap-3 p-3.5 bg-white/90 backdrop-blur-xs rounded-2xl border border-amber-200/90 shadow-xs"
           >
-            {timeText && (
-              <div className="flex-1 flex items-center gap-2.5 px-2">
-                <div className="p-2 bg-orange-100 rounded-xl text-orange-600 flex-shrink-0">
-                  <Clock className="w-4 h-4" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Tiempo</span>
-                  <span className="text-xs sm:text-sm font-bold text-stone-800 leading-snug">{timeText}</span>
-                </div>
+            <button
+              onClick={handleStartCookingMode}
+              className="w-full bg-gradient-to-r from-[#FF5500] via-[#FF6500] to-[#FF8A1A] hover:from-[#FF6500] hover:to-[#FF9525] active:scale-[0.98] text-white font-extrabold py-3.5 px-5 rounded-2xl shadow-[0_12px_28px_rgba(255,85,0,0.35)] transition-all flex items-center justify-between text-base cursor-pointer border border-amber-300/40 relative overflow-hidden group"
+              id="start-modo-cocina-btn"
+            >
+              <div className="absolute inset-x-0 top-0 h-[1px] bg-white/30"></div>
+              <div className="flex items-center gap-2.5">
+                <ChefHat className="w-5 h-5 text-white shrink-0 group-hover:rotate-12 transition-transform duration-300" />
+                <span className="tracking-wide text-lg">Modo cocina</span>
               </div>
-            )}
-
-            {timeText && recipe.servings && (
-              <div className="hidden sm:block w-[1px] h-8 bg-amber-200/80"></div>
-            )}
-
-            {recipe.servings && (
-              <div className="flex-1 flex items-center gap-2.5 px-2">
-                <div className="p-2 bg-amber-100 rounded-xl text-amber-700 flex-shrink-0">
-                  <Users className="w-4 h-4" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Porciones</span>
-                  <span className="text-xs sm:text-sm font-bold text-stone-800">{recipe.servings}</span>
-                </div>
+              <div className="bg-orange-800/40 border border-white/20 text-white text-[11px] font-extrabold px-3 py-1 rounded-full flex items-center gap-1 tracking-wider uppercase backdrop-blur-xs">
+                <span>PASO A PASO</span>
+                <ChevronRight className="w-3.5 h-3.5" />
               </div>
-            )}
+            </button>
           </motion.div>
         )}
 
-        {/* 4. Section: Ingredientes */}
+        {/* 4. Single Combined Info Card (Tiempo y Porciones arriba, Dificultad abajo) */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+          className="bg-white rounded-3xl border border-stone-200/70 shadow-[0_10px_30px_rgba(0,0,0,0.03)] overflow-hidden divide-y divide-stone-100/80"
+        >
+          {/* Top Grid: Tiempo & Porciones */}
+          <div className="grid grid-cols-2 divide-x divide-stone-100 p-4 sm:p-5 gap-2">
+            {/* TIEMPO */}
+            <div className="flex items-start gap-2.5 sm:gap-3 pr-2 sm:pr-3">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-orange-100/80 text-orange-600 flex items-center justify-center shrink-0 border border-orange-200/40 mt-0.5">
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="text-[10px] font-extrabold text-stone-400 uppercase tracking-widest block mb-1">TIEMPO</span>
+                <p className="text-xs sm:text-sm font-bold text-[#1F1A17] leading-relaxed">
+                  {timeText}
+                </p>
+              </div>
+            </div>
+
+            {/* PORCIONES */}
+            <div className="flex items-start gap-2.5 sm:gap-3 pl-3 sm:pl-4">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-amber-100/80 text-amber-600 flex items-center justify-center shrink-0 border border-amber-200/40 mt-0.5">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="text-[10px] font-extrabold text-stone-400 uppercase tracking-widest block mb-1">PORCIONES</span>
+                <p className="text-xs sm:text-sm font-bold text-[#1F1A17] leading-relaxed">
+                  {servingsText}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Banner: Dificultad */}
+          <div className="bg-[#FAF7F2]/80 px-4 py-3 sm:px-5 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-emerald-100/80 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-200/40">
+                <BarChart3 className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-extrabold text-stone-400 uppercase tracking-wider">DIFICULTAD:</span>
+                <span className="text-xs sm:text-sm font-bold text-[#1F1A17]">Fácil</span>
+              </div>
+            </div>
+            <span className="bg-emerald-100/80 text-emerald-800 text-[11px] font-extrabold px-3 py-1 rounded-full border border-emerald-200/60 shadow-2xs">
+              Ideal para todos
+            </span>
+          </div>
+        </motion.div>
+
+        {/* 5. Section: Ingredientes */}
         {ingredientsList.length > 0 && (
           <motion.div 
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
-            className="bg-white/95 backdrop-blur-xs rounded-3xl p-5 border border-amber-200/90 shadow-sm space-y-4"
+            transition={{ duration: 0.4, delay: 0.25 }}
+            className="bg-white rounded-3xl p-4 sm:p-5 border border-stone-200/80 shadow-[0_10px_30px_rgba(0,0,0,0.03)] space-y-4"
           >
-            <div className="flex items-center justify-between border-b border-amber-100 pb-3">
-              <h2 className="text-lg font-bold text-stone-900 font-display flex items-center gap-2">
-                <span className="text-xl">🥗</span>
-                <span>Ingredientes</span>
-              </h2>
-              <span className="text-xs font-semibold text-amber-900 bg-amber-100 px-2.5 py-0.5 rounded-full">
-                {ingredientsList.length} elementos
-              </span>
+            {/* Card Header with Title, Subtitle, and Element Count */}
+            <div className="border-b border-stone-100 pb-3.5 space-y-1">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl sm:text-2xl font-extrabold text-[#1F1A17] font-display flex items-center gap-2.5">
+                  <span className="text-2xl sm:text-3xl">🧺</span>
+                  <span>Ingredientes</span>
+                </h2>
+                <span className="text-xs font-extrabold text-amber-950 bg-[#FEF3D6] px-3.5 py-1 rounded-full border border-amber-300/60 shadow-2xs">
+                  {ingredientsList.length} elementos
+                </span>
+              </div>
+              <p className="text-stone-400 text-xs sm:text-sm font-medium pl-0.5">
+                Organiza y prepara cada ingrediente para una receta perfecta.
+              </p>
             </div>
 
-            <ul className="space-y-2.5">
+            {/* Interactive Checkable Ingredients List */}
+            <ul className="space-y-2.5 pt-0.5">
               {ingredientsList.map((ingredient, idx) => {
                 const isChecked = !!checkedIngredients[idx];
+                const { emoji, qtySubtext } = parseIngredientDetails(ingredient);
+
                 return (
                   <li
                     key={idx}
                     onClick={() => toggleIngredient(idx)}
-                    className={`flex items-start gap-3 p-3 rounded-2xl border transition-all cursor-pointer ${
+                    className={`flex items-center gap-3.5 p-3 sm:p-3.5 rounded-2xl border transition-all cursor-pointer ${
                       isChecked
-                        ? 'bg-amber-50/50 border-amber-200 text-stone-400 line-through'
-                        : 'bg-stone-50/80 hover:bg-amber-50/80 border-stone-200/70 text-stone-800'
+                        ? 'bg-stone-50/80 border-stone-200/80 text-stone-400'
+                        : 'bg-white hover:bg-orange-50/30 border-stone-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.02)] text-[#1F1A17]'
                     }`}
                   >
-                    <div className={`mt-0.5 w-5 h-5 rounded-lg flex items-center justify-center border transition-colors flex-shrink-0 ${
+                    {/* Rounded Circular Checkbox */}
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center border transition-all flex-shrink-0 ${
                       isChecked
-                        ? 'bg-orange-600 border-orange-600 text-white'
-                        : 'border-stone-300 bg-white'
+                        ? 'bg-[#FF5500] border-[#FF5500] text-white shadow-2xs'
+                        : 'border-orange-400/80 bg-white hover:border-orange-500'
                     }`}>
                       {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                     </div>
-                    <span className="text-sm font-medium leading-snug font-body">
-                      {ingredient}
-                    </span>
+
+                    {/* Food Miniature Circle */}
+                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#FAF7F2] border border-amber-200/60 flex items-center justify-center text-xl shrink-0 shadow-2xs">
+                      {emoji}
+                    </div>
+
+                    {/* Title and Quantity Subtext */}
+                    <div className="flex-1 min-w-0">
+                      <span className={`text-sm sm:text-base font-extrabold leading-tight block ${
+                        isChecked ? 'line-through text-stone-400 font-medium' : 'text-[#1F1A17]'
+                      }`}>
+                        {ingredient}
+                      </span>
+                      <span className="text-xs text-stone-400 font-medium block mt-0.5">
+                        {qtySubtext}
+                      </span>
+                    </div>
                   </li>
                 );
               })}
@@ -462,75 +598,152 @@ export function RecipeDetailScreen({
 
             {/* "Agregar a lista de compras" Action Button */}
             {onAddToShoppingList && (
-              <div className="pt-2 border-t border-amber-100">
+              <div className="pt-2 border-t border-stone-100">
                 <button
                   onClick={handleAddToShoppingListClick}
-                  className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 active:scale-[0.98] text-white font-bold py-3 px-4 rounded-2xl shadow-sm transition-all flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer border border-orange-400/30"
+                  className="w-full bg-gradient-to-r from-[#FF5500] via-[#FF6500] to-[#FF8A1A] hover:from-[#FF6500] hover:to-[#FF9525] active:scale-[0.98] text-white font-extrabold py-3.5 px-5 rounded-2xl shadow-[0_10px_25px_rgba(255,85,0,0.32)] transition-all flex items-center justify-between text-sm sm:text-base cursor-pointer border border-amber-300/40 relative overflow-hidden group"
                   id="add-ingredients-to-shopping-list-btn"
                 >
-                  <ShoppingCart className="w-5 h-5 text-amber-100" />
-                  <span>Agregar a lista de compras</span>
+                  <div className="absolute inset-x-0 top-0 h-[1px] bg-white/30"></div>
+                  <div className="flex items-center gap-2.5">
+                    <ShoppingCart className="w-5 h-5 text-white shrink-0 group-hover:scale-110 transition-transform" />
+                    <span>Agregar a lista de compras</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-white/90" />
                 </button>
               </div>
             )}
           </motion.div>
         )}
 
-        {/* 5. Section: Preparación */}
-        {stepsList.length > 0 && (
-          <motion.div 
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.25 }}
-            className="bg-white/95 backdrop-blur-xs rounded-3xl p-5 border border-amber-200/90 shadow-sm space-y-4"
-          >
-            <div className="flex items-center justify-between border-b border-amber-100 pb-3">
-              <h2 className="text-lg font-bold text-stone-900 font-display flex items-center gap-2">
-                <span className="text-xl">🍳</span>
-                <span>Preparación paso a paso</span>
-              </h2>
-              
-              <button
-                onClick={handleStartCookingMode}
-                className="text-xs font-bold text-orange-600 hover:text-orange-700 bg-orange-100 hover:bg-orange-200 px-2.5 py-1 rounded-xl transition-colors cursor-pointer flex items-center gap-1"
-                id="prep-modo-cocina-btn"
-              >
-                <ChefHat className="w-3.5 h-3.5" />
-                <span>Modo cocina</span>
-              </button>
-            </div>
-
-            <div className="space-y-4 pt-1">
-              {stepsList.map((step, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-start gap-3.5 p-4 bg-amber-50/60 rounded-2xl border border-amber-200/70"
-                >
-                  <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 text-white font-extrabold text-xs flex items-center justify-center shadow-xs flex-shrink-0 mt-0.5 font-display">
-                    {idx + 1}
-                  </div>
-                  <p className="text-sm sm:text-base text-stone-800 font-medium leading-relaxed font-body">
-                    {step}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-
-        {/* 6. Return Button at bottom of content */}
+        {/* 6. Section: Descripción */}
         <motion.div 
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.3 }}
+          className="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-[0_10px_30px_rgba(0,0,0,0.04)] space-y-2.5"
+        >
+          <div className="flex items-center justify-between border-b border-stone-100 pb-2.5">
+            <h2 className="text-lg font-extrabold text-[#1F1A17] font-display flex items-center gap-2">
+              <div className="w-7 h-7 rounded-xl bg-amber-100/80 flex items-center justify-center text-amber-700">
+                <BookOpen className="w-4 h-4" />
+              </div>
+              <span>Descripción</span>
+            </h2>
+            <ChevronRight className="w-4 h-4 text-stone-400" />
+          </div>
+
+          <p className="text-stone-700 text-sm sm:text-base leading-relaxed font-normal">
+            {recipe.description || 'Jugoso rollo de carne molida relleno de queso derretido, vegetales y especias caseras. Perfecto para compartir en familia.'}
+          </p>
+        </motion.div>
+
+        {/* 7. Section: Preparación Paso a Paso (Expanded View) */}
+        {stepsList.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.35 }}
+            className="bg-white rounded-3xl p-4 sm:p-5 border border-stone-200/80 shadow-[0_10px_30px_rgba(0,0,0,0.03)] space-y-4"
+          >
+            {/* Title & Modo Cocina Header */}
+            <div className="border-b border-stone-100 pb-3.5 space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-100/80 border border-amber-200/60 flex items-center justify-center text-amber-700 shrink-0">
+                    <UtensilsCrossed className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-extrabold text-[#1F1A17] font-display">
+                      Preparación paso a paso
+                    </h2>
+                  </div>
+                </div>
+                
+                <button
+                  onClick={handleStartCookingMode}
+                  className="text-xs font-extrabold text-[#FF5500] hover:text-[#e04b00] bg-orange-50 hover:bg-orange-100 px-3.5 py-1.5 rounded-full transition-all cursor-pointer flex items-center gap-1.5 border border-orange-200/70 shadow-2xs shrink-0"
+                  id="prep-modo-cocina-btn"
+                >
+                  <ChefHat className="w-4 h-4 text-[#FF5500]" />
+                  <span>Modo cocina</span>
+                </button>
+              </div>
+              <p className="text-stone-400 text-xs sm:text-sm font-medium pl-0.5">
+                Sigue cada paso para lograr un resultado perfecto.
+              </p>
+            </div>
+
+            {/* List of Step Cards */}
+            <div className="space-y-3 pt-0.5">
+              {stepsList.map((step, idx) => {
+                const words = step.trim().split(' ');
+                const firstWord = words[0];
+                const restText = words.slice(1).join(' ');
+                const emoji = getStepMiniatureEmoji(step, idx);
+
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => {
+                      setCurrentStepIndex(idx);
+                      setIsCookingMode(true);
+                    }}
+                    className="flex items-center gap-3 sm:gap-3.5 p-3.5 sm:p-4 bg-white hover:bg-orange-50/30 rounded-2xl border border-stone-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.02)] transition-all cursor-pointer group"
+                  >
+                    {/* Step Number Badge */}
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FF5500] text-white font-extrabold text-xs sm:text-sm flex items-center justify-center shadow-2xs flex-shrink-0">
+                      {idx + 1}
+                    </div>
+
+                    {/* Step Food Miniature Circle */}
+                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#FAF7F2] border border-amber-200/60 flex items-center justify-center text-xl shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                      {emoji}
+                    </div>
+
+                    {/* Step Description Text with Bold Action Verb */}
+                    <p className="text-xs sm:text-sm text-[#1F1A17] leading-relaxed font-medium flex-1 min-w-0">
+                      <strong className="font-extrabold text-[#1F1A17]">{firstWord}</strong> {restText}
+                    </p>
+
+                    {/* Lateral Arrow */}
+                    <ChevronRight className="w-4 h-4 text-orange-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Chef Tip Card */}
+            <div className="bg-[#FEF8EB] border border-amber-200/80 rounded-2xl p-3.5 sm:p-4 flex items-center gap-3 relative overflow-hidden shadow-2xs mt-2">
+              <div className="w-9 h-9 rounded-full bg-amber-400/20 text-amber-600 border border-amber-300/50 flex items-center justify-center shrink-0">
+                <Sparkles className="w-4 h-4 text-amber-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="text-xs font-extrabold text-amber-900 block mb-0.5">
+                  Consejo del chef:
+                </span>
+                <p className="text-xs text-amber-800/90 font-medium leading-normal">
+                  Deja reposar 5 minutos antes de cortar para que los jugos se redistribuyan.
+                </p>
+              </div>
+              <ChefHat className="w-12 h-12 text-amber-200/40 absolute -right-2 -bottom-2 pointer-events-none stroke-1" />
+            </div>
+          </motion.div>
+        )}
+
+        {/* 8. Return Button */}
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.4 }}
           className="pt-2 pb-4"
         >
           <button
             onClick={onBack}
-            className="w-full bg-stone-900 hover:bg-stone-800 active:scale-[0.98] text-amber-100 font-bold py-3.5 px-6 rounded-2xl shadow-md transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer text-sm sm:text-base border border-stone-700"
+            className="w-full bg-[#1F1A17] hover:bg-black active:scale-[0.98] text-stone-100 font-extrabold py-3.5 px-6 rounded-2xl shadow-lg transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer text-sm sm:text-base border border-stone-800"
             id="detail-bottom-back-btn"
           >
-            <ArrowLeft className="w-4 h-4 text-amber-400" />
+            <ArrowLeft className="w-4 h-4 text-orange-400" />
             <span>Regresar a la pantalla anterior</span>
           </button>
         </motion.div>
@@ -544,7 +757,7 @@ export function RecipeDetailScreen({
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 30 }}
-            className="absolute bottom-4 left-4 right-4 z-40 bg-stone-900/95 text-stone-100 p-3.5 rounded-2xl shadow-2xl border border-amber-500/50 flex items-center justify-between gap-3 backdrop-blur-md"
+            className="absolute bottom-4 left-4 right-4 z-40 bg-[#1F1A17] text-stone-100 p-3.5 rounded-2xl shadow-2xl border border-orange-500/40 flex items-center justify-between gap-3 backdrop-blur-md"
           >
             <div className="flex items-center gap-2.5">
               <div className="p-2 bg-orange-600 rounded-xl text-white flex-shrink-0">

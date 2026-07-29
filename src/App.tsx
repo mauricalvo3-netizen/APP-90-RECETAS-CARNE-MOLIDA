@@ -59,14 +59,23 @@ export default function App() {
   }, [favoriteIds]);
 
   // Shopping List Action Handlers
-  const handleAddRecipeToShoppingList = (recipe: SampleRecipe) => {
-    const ingredients = recipe.ingredientes || recipe.ingredients || [];
-    if (ingredients.length === 0) return;
+  const handleAddRecipesToShoppingList = (recipes: SampleRecipe | SampleRecipe[]) => {
+    const recipeArray = Array.isArray(recipes) ? recipes : [recipes];
+    const newIngredients: string[] = [];
+
+    recipeArray.forEach((recipe) => {
+      const ingredients = recipe.ingredientes || recipe.ingredients || [];
+      ingredients.forEach((ing) => {
+        if (ing && ing.trim()) newIngredients.push(ing.trim());
+      });
+    });
+
+    if (newIngredients.length === 0) return;
 
     setShoppingListItems((prev) => {
       const combined = [
         ...prev,
-        ...ingredients.map((ing) => ing.trim()),
+        ...newIngredients,
       ];
       const nextList = consolidateShoppingList(combined);
 
@@ -175,12 +184,12 @@ export default function App() {
           deviceFrame
             ? 'max-w-md min-h-[92vh] sm:min-h-[820px] sm:max-h-[880px] sm:rounded-[2.5rem] sm:border-[8px] sm:border-stone-800 sm:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)]'
             : 'max-w-md min-h-screen'
-        } bg-gradient-to-b from-amber-50/90 via-orange-50/40 to-amber-100/70 text-stone-800`}
+        } bg-[#F8F6F2] bg-gradient-to-b from-[#FAF8F5] via-[#F8F6F2] to-[#F2EDE6] text-stone-800`}
       >
         {/* Subtle Decorative Warm Radial Background Elements */}
-        <div className="absolute -top-24 -right-24 w-60 h-60 bg-orange-300/30 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute top-1/2 -left-28 w-56 h-56 bg-amber-300/20 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute -bottom-20 right-0 w-64 h-64 bg-amber-400/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -top-24 -right-24 w-60 h-60 bg-orange-300/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute top-1/2 -left-28 w-56 h-56 bg-amber-300/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -bottom-20 right-0 w-64 h-64 bg-orange-200/15 rounded-full blur-3xl pointer-events-none"></div>
 
         {/* Dynamic Screen Transition Layer */}
         <div className="flex-1 flex flex-col overflow-hidden relative z-10">
@@ -229,7 +238,11 @@ export default function App() {
                 transition={{ duration: 0.25 }}
                 className="flex-1 flex flex-col h-full overflow-hidden"
               >
-                <RecipeLibraryScreen onSelectRecipe={handleViewFullRecipe} />
+                <RecipeLibraryScreen
+                  onSelectRecipe={handleViewFullRecipe}
+                  onAddRecipesToShoppingList={handleAddRecipesToShoppingList}
+                  onOpenShoppingList={handleOpenShoppingList}
+                />
               </motion.div>
             )}
 
@@ -285,7 +298,7 @@ export default function App() {
                   onBack={handleBackToPrevious}
                   isFavorite={favoriteIds.includes(selectedRecipe.id)}
                   onToggleFavorite={() => toggleFavorite(selectedRecipe.id)}
-                  onAddToShoppingList={handleAddRecipeToShoppingList}
+                  onAddToShoppingList={handleAddRecipesToShoppingList}
                   shoppingListCount={shoppingListItems.length}
                   onOpenShoppingList={handleOpenShoppingList}
                 />
@@ -295,64 +308,64 @@ export default function App() {
         </div>
 
         {/* Bottom Mobile Navigation Bar */}
-        <nav className="bg-white/90 backdrop-blur-md border-t border-amber-200/80 px-4 py-2 relative z-20 flex items-center justify-around shadow-lg">
+        <nav className="bg-[#F8F6F2] border-t border-stone-200/70 px-4 py-2.5 relative z-20 flex items-center justify-around shadow-[0_-4px_16px_rgba(0,0,0,0.03)]">
           <button
             onClick={() => setCurrentScreen('home')}
             className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
               currentScreen === 'home'
-                ? 'text-orange-600 font-bold scale-105'
-                : 'text-stone-400 hover:text-stone-600 font-medium'
+                ? 'text-[#FF5500] font-extrabold scale-105'
+                : 'text-stone-400 hover:text-stone-700 font-medium'
             }`}
             id="nav-home-btn"
           >
-            <Home className="w-5 h-5" />
-            <span className="text-[10px] sm:text-[11px]">Inicio</span>
+            <Home className="w-5 h-5 stroke-[2.2]" />
+            <span className="text-[10px] sm:text-[11px] tracking-tight">Inicio</span>
           </button>
 
           <button
             onClick={handleStartRecommendation}
             className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
               currentScreen === 'recommendations'
-                ? 'text-orange-600 font-bold scale-105'
-                : 'text-stone-400 hover:text-stone-600 font-medium'
+                ? 'text-[#FF5500] font-extrabold scale-105'
+                : 'text-stone-400 hover:text-stone-700 font-medium'
             }`}
             id="nav-assistant-btn"
           >
-            <Utensils className="w-5 h-5" />
-            <span className="text-[10px] sm:text-[11px]">Asistente</span>
+            <Utensils className="w-5 h-5 stroke-[2.2]" />
+            <span className="text-[10px] sm:text-[11px] tracking-tight">Asistente</span>
           </button>
 
           <button
             onClick={() => setCurrentScreen('library')}
             className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
               currentScreen === 'library'
-                ? 'text-orange-600 font-bold scale-105'
-                : 'text-stone-400 hover:text-stone-600 font-medium'
+                ? 'text-[#FF5500] font-extrabold scale-105'
+                : 'text-stone-400 hover:text-stone-700 font-medium'
             }`}
             id="nav-library-btn"
           >
-            <BookOpen className="w-5 h-5" />
-            <span className="text-[10px] sm:text-[11px]">Biblioteca</span>
+            <BookOpen className="w-5 h-5 stroke-[2.2]" />
+            <span className="text-[10px] sm:text-[11px] tracking-tight">Biblioteca</span>
           </button>
 
           <button
             onClick={handleOpenShoppingList}
             className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-all cursor-pointer relative ${
               currentScreen === 'shopping_list'
-                ? 'text-orange-600 font-bold scale-105'
-                : 'text-stone-400 hover:text-stone-600 font-medium'
+                ? 'text-[#FF5500] font-extrabold scale-105'
+                : 'text-stone-400 hover:text-stone-700 font-medium'
             }`}
             id="nav-shopping-list-btn"
           >
             <div className="relative">
-              <ShoppingCart className="w-5 h-5" />
+              <ShoppingCart className="w-5 h-5 stroke-[2.2]" />
               {shoppingListItems.length > 0 && (
-                <span className="absolute -top-1.5 -right-2.5 bg-orange-600 text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                <span className="absolute -top-1.5 -right-2.5 bg-[#FF5500] text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center border-2 border-[#F8F6F2] shadow-2xs">
                   {shoppingListItems.length > 99 ? '99+' : shoppingListItems.length}
                 </span>
               )}
             </div>
-            <span className="text-[10px] sm:text-[11px]">Compras</span>
+            <span className="text-[10px] sm:text-[11px] tracking-tight">Compras</span>
           </button>
         </nav>
       </main>

@@ -55,6 +55,7 @@ function extractCoreKey(text: string): { key: string; displayName: string } {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') // remove accents for key matching
     .replace(/\(.*?\)/g, '') // remove parentheses content
+    .replace(/\b(aprox|aprox\.|aproximadamente)\b/gi, '')
     .trim();
 
   // Known key mapping for Spanish recipes
@@ -65,14 +66,15 @@ function extractCoreKey(text: string): { key: string; displayName: string } {
   if (clean.includes('pan molido')) return { key: 'pan_molido', displayName: 'pan molido' };
   if (clean.includes('mozzarella')) return { key: 'queso_mozzarella', displayName: 'queso mozzarella' };
   if (clean.includes('queso rallado')) return { key: 'queso_rallado', displayName: 'queso rallado' };
+  if (clean.includes('queso')) return { key: 'queso', displayName: 'queso' };
   if (clean.includes('jamon')) return { key: 'jamon', displayName: 'jamón' };
   if (clean.includes('aceite de oliva')) return { key: 'aceite_oliva', displayName: 'aceite de oliva' };
   if (clean.includes('aceite')) return { key: 'aceite', displayName: 'aceite vegetal' };
-  if (clean.includes('sal y pimienta')) return { key: 'sal_pimienta', displayName: 'sal y pimienta' };
+  if (clean.includes('sal y pimienta') || (clean.includes('sal') && clean.includes('pimienta'))) return { key: 'sal_pimienta', displayName: 'sal y pimienta' };
   if (clean.includes('sal')) return { key: 'sal', displayName: 'sal' };
   if (clean.includes('pimienta')) return { key: 'pimienta', displayName: 'pimienta negra' };
-  if (clean.includes('tomate') || clean.includes('jitomate')) return { key: 'tomate', displayName: 'tomate' };
   if (clean.includes('salsa de tomate') || clean.includes('pure de tomate')) return { key: 'salsa_tomate', displayName: 'salsa de tomate' };
+  if (clean.includes('tomate') || clean.includes('jitomate')) return { key: 'tomate', displayName: 'tomate' };
   if (clean.includes('mantequilla') || clean.includes('manteca')) return { key: 'mantequilla', displayName: 'mantequilla' };
   if (clean.includes('leche')) return { key: 'leche', displayName: 'leche' };
   if (clean.includes('crema')) return { key: 'crema', displayName: 'crema' };
@@ -102,7 +104,10 @@ function extractCoreKey(text: string): { key: string; displayName: string } {
 
 // Parse a single raw ingredient string into structured components
 export function parseIngredient(rawText: string): ParsedIngredient {
-  const text = rawText.trim();
+  let text = rawText.trim();
+  // Clean leading "Aprox." or "Aproximadamente"
+  text = text.replace(/^(aprox|aprox\.|aproximadamente)\s*/i, '').trim();
+  
   const lower = text.toLowerCase();
   const hasAlGusto = lower.includes('al gusto');
 
