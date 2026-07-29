@@ -1,16 +1,24 @@
 {
-  "name": "90 Recetas con Carne Molida",
-  "short_name": "Recetas Carne",
+  "name": "90 Recetas",
+  "short_name": "90 Recetas",
   "description": "Descubre en segundos qué cocinar hoy con carne molida.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#171311",
+  "orientation": "portrait",
+  "background_color": "#0D0D0D",
   "theme_color": "#FF5500",
   "icons": [
     {
       "src": "/icon.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
     }
   ]
 }
