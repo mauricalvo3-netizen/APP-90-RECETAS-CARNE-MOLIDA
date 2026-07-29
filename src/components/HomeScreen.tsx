@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import appLogo from '../assets/images/app_logo_1785213158777.jpg';
 import heroImage from '../assets/images/ground_beef_hero_premium_1785345636835.jpg';
-import { Sparkles, Utensils, ChefHat, Heart, ShoppingCart, ArrowDown, X, Download, Share2, PlusSquare, ExternalLink } from 'lucide-react';
+import { Sparkles, Utensils, ChefHat, Heart, ShoppingCart, ArrowDown, X, Download } from 'lucide-react';
 
 interface HomeScreenProps {
   onStartClick: () => void;
@@ -22,15 +22,8 @@ export function HomeScreen({
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isStandalone, setIsStandalone] = useState<boolean>(false);
   const [isDismissed, setIsDismissed] = useState<boolean>(false);
-  const [showInstallModal, setShowInstallModal] = useState<boolean>(false);
-  const [isIOS, setIsIOS] = useState<boolean>(false);
 
   useEffect(() => {
-    // Detect iOS
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    const isAppleIOS = /iphone|ipad|ipod/.test(userAgent);
-    setIsIOS(isAppleIOS);
-
     // Check if running as standalone PWA
     const standaloneCheck =
       window.matchMedia('(display-mode: standalone)').matches ||
@@ -78,22 +71,16 @@ export function HomeScreen({
         const choiceResult = await prompt.userChoice;
         if (choiceResult && choiceResult.outcome === 'accepted') {
           setIsDismissed(true);
-          setShowInstallModal(false);
           setDeferredPrompt(null);
           (window as any).__pwaDeferredPrompt = null;
-          return;
         }
       } catch (err) {
         console.error('PWA install prompt error:', err);
       }
-    }
-
-    // If native prompt unavailable or inside iframe, open install modal or window
-    if (isInIframe) {
-      // Open in new tab so native PWA installer triggers
+    } else if (isInIframe) {
+      // In preview iframe, open in top-level window where browser natively triggers PWA prompt
       window.open(window.location.href, '_blank');
     }
-    setShowInstallModal(true);
   };
 
   const handleDismiss = () => {
@@ -280,122 +267,6 @@ export function HomeScreen({
           )}
         </AnimatePresence>
       </motion.div>
-
-      {/* PWA Direct Installation Guided Modal */}
-      <AnimatePresence>
-        {showInstallModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-[#14100E] border border-orange-500/50 rounded-3xl p-5 max-w-sm w-full text-center relative shadow-[0_20px_60px_rgba(255,85,0,0.3)] overflow-hidden"
-            >
-              {/* Close Modal Button */}
-              <button
-                onClick={() => setShowInstallModal(false)}
-                className="absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-stone-800/80 text-stone-300 hover:text-white flex items-center justify-center transition-colors border border-stone-700/60 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              {/* Modal App Header */}
-              <div className="flex flex-col items-center pt-2 pb-3">
-                <div className="relative mb-3">
-                  <div className="absolute -inset-2 bg-orange-500/30 rounded-2xl blur-lg"></div>
-                  <img
-                    src="/icon.png"
-                    alt="Logo 90 Recetas"
-                    referrerPolicy="no-referrer"
-                    className="w-16 h-16 rounded-2xl border-2 border-amber-400/50 shadow-xl relative z-10"
-                  />
-                </div>
-
-                <h2 className="text-xl font-extrabold text-white tracking-tight font-display">
-                  Instalar 90 Recetas
-                </h2>
-                <p className="text-xs text-amber-400 font-medium mt-1">
-                  Acceso instantáneo sin conexión a internet
-                </p>
-              </div>
-
-              {/* Dynamic OS Guidance */}
-              <div className="bg-stone-900/90 border border-stone-800 rounded-2xl p-4 text-left space-y-3 mb-5">
-                {isIOS ? (
-                  <>
-                    <div className="flex items-center gap-3 text-xs text-stone-200">
-                      <div className="w-7 h-7 rounded-lg bg-orange-500/20 border border-orange-500/40 text-orange-400 flex items-center justify-center shrink-0">
-                        <Share2 className="w-4 h-4" />
-                      </div>
-                      <p>1. Toca el botón <strong>Compartir</strong> en Safari (abajo).</p>
-                    </div>
-                    <div className="flex items-center gap-3 text-xs text-stone-200">
-                      <div className="w-7 h-7 rounded-lg bg-orange-500/20 border border-orange-500/40 text-orange-400 flex items-center justify-center shrink-0">
-                        <PlusSquare className="w-4 h-4" />
-                      </div>
-                      <p>2. Selecciona <strong>"Agregar a inicio"</strong>.</p>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-start gap-3 text-xs text-stone-200">
-                      <div className="w-7 h-7 rounded-lg bg-orange-500/20 border border-orange-500/40 text-orange-400 flex items-center justify-center shrink-0 mt-0.5">
-                        <Download className="w-4 h-4" />
-                      </div>
-                      <p className="leading-snug">
-                        Para instalar en 1 clic, confirma la solicitud de tu navegador o abre la app en ventana completa.
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-3 text-xs text-stone-300 border-t border-stone-800/80 pt-2.5 mt-2">
-                      <span className="text-amber-400 font-bold">Nota:</span>
-                      <p className="text-[11px] leading-snug">
-                        Si ves el menú de tu navegador (⋮ o ⁝), selecciona <strong>"Instalar aplicación"</strong> o <strong>"Agregar a pantalla principal"</strong>.
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Direct Action Button */}
-              <div className="space-y-2">
-                <button
-                  onClick={async () => {
-                    const prompt = deferredPrompt || (window as any).__pwaDeferredPrompt;
-                    if (prompt) {
-                      try {
-                        await prompt.prompt();
-                        const result = await prompt.userChoice;
-                        if (result?.outcome === 'accepted') {
-                          setShowInstallModal(false);
-                          setIsDismissed(true);
-                          return;
-                        }
-                      } catch (e) {
-                        console.error('Error in modal install prompt:', e);
-                      }
-                    }
-                    // Fallback: open in top-level browser tab
-                    window.open(window.location.href, '_blank');
-                  }}
-                  className="w-full bg-gradient-to-r from-[#FF5500] via-[#FF6500] to-[#FF7A00] hover:from-[#FF6500] hover:to-[#FF8800] active:scale-95 text-white font-extrabold py-3 px-4 rounded-xl shadow-[0_4px_20px_rgba(255,85,0,0.5)] transition-all cursor-pointer border border-amber-300/40 flex items-center justify-center gap-2 text-sm"
-                  id="pwa-modal-install-btn"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Instalar Ahora</span>
-                  <ExternalLink className="w-3.5 h-3.5 opacity-80" />
-                </button>
-
-                <button
-                  onClick={() => setShowInstallModal(false)}
-                  className="w-full py-2 text-xs font-semibold text-stone-400 hover:text-stone-200 transition-colors cursor-pointer"
-                >
-                  Entendido / Cerrar
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
