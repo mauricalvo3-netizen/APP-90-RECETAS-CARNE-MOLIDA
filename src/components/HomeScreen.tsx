@@ -55,6 +55,22 @@ export function HomeScreen({
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
+    // Auto-prompt if opened with autoinstall flag from iframe
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('autoinstall') === '1' || urlParams.get('install') === '1') {
+      const attemptAutoPrompt = async () => {
+        const p = (window as any).__pwaDeferredPrompt;
+        if (p) {
+          try {
+            await p.prompt();
+          } catch (err) {
+            console.log('Auto prompt waiting for gesture:', err);
+          }
+        }
+      };
+      attemptAutoPrompt();
+    }
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       delete (window as any).__onPwaInstallable;
@@ -76,10 +92,27 @@ export function HomeScreen({
         }
       } catch (err) {
         console.error('PWA install prompt error:', err);
+        if (isInIframe) {
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.set('autoinstall', '1');
+          window.open(newUrl.toString(), '_blank');
+        }
       }
     } else if (isInIframe) {
       // In preview iframe, open in top-level window where browser natively triggers PWA prompt
-      window.open(window.location.href, '_blank');
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('autoinstall', '1');
+      window.open(newUrl.toString(), '_blank');
+    } else {
+      // Fallback if beforeinstallprompt hasn't fired yet on standalone tab
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(() => {
+          const recheckedPrompt = (window as any).__pwaDeferredPrompt;
+          if (recheckedPrompt) {
+            recheckedPrompt.prompt();
+          }
+        });
+      }
     }
   };
 
