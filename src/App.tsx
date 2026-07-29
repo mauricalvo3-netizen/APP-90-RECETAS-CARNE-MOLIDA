@@ -1,13 +1,16 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { HomeScreen } from './components/HomeScreen';
 import { RecommendationScreen } from './components/RecommendationScreen';
 import { RecipeLibraryScreen } from './components/RecipeLibraryScreen';
+import { FavoritesScreen } from './components/FavoritesScreen';
 import { RecipeDetailScreen } from './components/RecipeDetailScreen';
+import { ShoppingListScreen, ShoppingListItem } from './components/ShoppingListScreen';
+import { consolidateShoppingList } from './utils/shoppingList';
 import { SampleRecipe, SAMPLE_RECIPES } from './data/recipes';
-import { Smartphone, Sparkles, Home, BookOpen, Utensils } from 'lucide-react';
+import { Smartphone, Sparkles, Home, BookOpen, Utensils, ShoppingCart } from 'lucide-react';
 
-type Screen = 'home' | 'recommendations' | 'library' | 'recipe_detail';
+type Screen = 'home' | 'recommendations' | 'library' | 'favorites' | 'shopping_list' | 'recipe_detail';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('home');
@@ -15,9 +18,115 @@ export default function App() {
   const [selectedRecipe, setSelectedRecipe] = useState<SampleRecipe>(SAMPLE_RECIPES[0]);
   const [deviceFrame, setDeviceFrame] = useState<boolean>(true);
 
+  // Persistent Favorites State in localStorage
+  const [favoriteIds, setFavoriteIds] = useState<number[]>(() => {
+    try {
+      const saved = localStorage.getItem('recetas_carne_molida_favoritas');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Persistent Shopping List State in localStorage
+  const [shoppingListItems, setShoppingListItems] = useState<ShoppingListItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('recetas_carne_molida_lista_compras');
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      return consolidateShoppingList(parsed);
+    } catch {
+      return [];
+    }
+  });
+
+  const toggleFavorite = (recipeId: number) => {
+    setFavoriteIds((prev) => {
+      const next = prev.includes(recipeId)
+        ? prev.filter((id) => id !== recipeId)
+        : [...prev, recipeId];
+      try {
+        localStorage.setItem('recetas_carne_molida_favoritas', JSON.stringify(next));
+      } catch (e) {
+        console.error('Error guardando favoritos en localStorage:', e);
+      }
+      return next;
+    });
+  };
+
+  const favoriteRecipes = useMemo(() => {
+    return SAMPLE_RECIPES.filter((r) => favoriteIds.includes(r.id));
+  }, [favoriteIds]);
+
+  // Shopping List Action Handlers
+  const handleAddRecipeToShoppingList = (recipe: SampleRecipe) => {
+    const ingredients = recipe.ingredientes || recipe.ingredients || [];
+    if (ingredients.length === 0) return;
+
+    setShoppingListItems((prev) => {
+      const combined = [
+        ...prev,
+        ...ingredients.map((ing) => ing.trim()),
+      ];
+      const nextList = consolidateShoppingList(combined);
+
+      try {
+        localStorage.setItem('recetas_carne_molida_lista_compras', JSON.stringify(nextList));
+      } catch (e) {
+        console.error('Error guardando lista de compras en localStorage:', e);
+      }
+      return nextList;
+    });
+  };
+
+  const handleToggleShoppingListItem = (id: string) => {
+    setShoppingListItems((prev) => {
+      const nextList = prev.map((item) =>
+        item.id === id ? { ...item, checked: !item.checked } : item
+      );
+      try {
+        localStorage.setItem('recetas_carne_molida_lista_compras', JSON.stringify(nextList));
+      } catch (e) {
+        console.error('Error guardando lista de compras en localStorage:', e);
+      }
+      return nextList;
+    });
+  };
+
+  const handleRemoveShoppingListItem = (id: string) => {
+    setShoppingListItems((prev) => {
+      const nextList = prev.filter((item) => item.id !== id);
+      try {
+        localStorage.setItem('recetas_carne_molida_lista_compras', JSON.stringify(nextList));
+      } catch (e) {
+        console.error('Error guardando lista de compras en localStorage:', e);
+      }
+      return nextList;
+    });
+  };
+
+  const handleClearShoppingList = () => {
+    setShoppingListItems([]);
+    try {
+      localStorage.removeItem('recetas_carne_molida_lista_compras');
+    } catch (e) {
+      console.error('Error limpiando lista de compras en localStorage:', e);
+    }
+  };
+
   const handleStartRecommendation = () => {
     setPreviousScreen(currentScreen);
     setCurrentScreen('recommendations');
+  };
+
+  const handleOpenFavorites = () => {
+    setPreviousScreen(currentScreen);
+    setCurrentScreen('favorites');
+  };
+
+  const handleOpenShoppingList = () => {
+    setPreviousScreen(currentScreen);
+    setCurrentScreen('shopping_list');
   };
 
   const handleViewFullRecipe = (recipe: SampleRecipe) => {
@@ -44,7 +153,9 @@ export default function App() {
             {currentScreen === 'home' && 'Módulo 1: Inicio'}
             {currentScreen === 'recommendations' && 'Módulo 2: Asistente'}
             {currentScreen === 'library' && 'Módulo 3: Biblioteca'}
-            {currentScreen === 'recipe_detail' && 'Módulo 4: Detalle de Receta'}
+            {currentScreen === 'favorites' && 'Módulo 4: Mis Favoritas'}
+            {currentScreen === 'shopping_list' && 'Módulo 5: Lista de Compras'}
+            {currentScreen === 'recipe_detail' && 'Módulo 6: Detalle de Receta'}
           </span>
         </div>
         <button
@@ -81,9 +192,15 @@ export default function App() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.25 }}
-                className="flex-1 flex flex-col h-full"
+                className="flex-1 flex flex-col h-full overflow-hidden"
               >
-                <HomeScreen onStartClick={handleStartRecommendation} />
+                <HomeScreen
+                  onStartClick={handleStartRecommendation}
+                  onFavoritesClick={handleOpenFavorites}
+                  favoritesCount={favoriteIds.length}
+                  onShoppingListClick={handleOpenShoppingList}
+                  shoppingListCount={shoppingListItems.length}
+                />
               </motion.div>
             )}
 
@@ -116,6 +233,44 @@ export default function App() {
               </motion.div>
             )}
 
+            {currentScreen === 'favorites' && (
+              <motion.div
+                key="favorites"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 15 }}
+                transition={{ duration: 0.25 }}
+                className="flex-1 flex flex-col h-full overflow-hidden"
+              >
+                <FavoritesScreen
+                  favoriteRecipes={favoriteRecipes}
+                  onSelectRecipe={handleViewFullRecipe}
+                  onBackToHome={handleBackToHome}
+                  onGoToLibrary={() => setCurrentScreen('library')}
+                />
+              </motion.div>
+            )}
+
+            {currentScreen === 'shopping_list' && (
+              <motion.div
+                key="shopping_list"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 15 }}
+                transition={{ duration: 0.25 }}
+                className="flex-1 flex flex-col h-full overflow-hidden"
+              >
+                <ShoppingListScreen
+                  items={shoppingListItems}
+                  onToggleItem={handleToggleShoppingListItem}
+                  onClearList={handleClearShoppingList}
+                  onRemoveItem={handleRemoveShoppingListItem}
+                  onBackToHome={handleBackToHome}
+                  onGoToLibrary={() => setCurrentScreen('library')}
+                />
+              </motion.div>
+            )}
+
             {currentScreen === 'recipe_detail' && (
               <motion.div
                 key="recipe_detail"
@@ -128,6 +283,11 @@ export default function App() {
                 <RecipeDetailScreen
                   recipe={selectedRecipe}
                   onBack={handleBackToPrevious}
+                  isFavorite={favoriteIds.includes(selectedRecipe.id)}
+                  onToggleFavorite={() => toggleFavorite(selectedRecipe.id)}
+                  onAddToShoppingList={handleAddRecipeToShoppingList}
+                  shoppingListCount={shoppingListItems.length}
+                  onOpenShoppingList={handleOpenShoppingList}
                 />
               </motion.div>
             )}
@@ -135,10 +295,10 @@ export default function App() {
         </div>
 
         {/* Bottom Mobile Navigation Bar */}
-        <nav className="bg-white/90 backdrop-blur-md border-t border-amber-200/80 px-6 py-2 relative z-20 flex items-center justify-around shadow-lg">
+        <nav className="bg-white/90 backdrop-blur-md border-t border-amber-200/80 px-4 py-2 relative z-20 flex items-center justify-around shadow-lg">
           <button
             onClick={() => setCurrentScreen('home')}
-            className={`flex flex-col items-center gap-1 py-1 px-4 rounded-xl transition-all cursor-pointer ${
+            className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
               currentScreen === 'home'
                 ? 'text-orange-600 font-bold scale-105'
                 : 'text-stone-400 hover:text-stone-600 font-medium'
@@ -146,12 +306,12 @@ export default function App() {
             id="nav-home-btn"
           >
             <Home className="w-5 h-5" />
-            <span className="text-[11px]">Inicio</span>
+            <span className="text-[10px] sm:text-[11px]">Inicio</span>
           </button>
 
           <button
             onClick={handleStartRecommendation}
-            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all cursor-pointer ${
+            className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
               currentScreen === 'recommendations'
                 ? 'text-orange-600 font-bold scale-105'
                 : 'text-stone-400 hover:text-stone-600 font-medium'
@@ -159,12 +319,12 @@ export default function App() {
             id="nav-assistant-btn"
           >
             <Utensils className="w-5 h-5" />
-            <span className="text-[11px]">Asistente</span>
+            <span className="text-[10px] sm:text-[11px]">Asistente</span>
           </button>
 
           <button
             onClick={() => setCurrentScreen('library')}
-            className={`flex flex-col items-center gap-1 py-1 px-4 rounded-xl transition-all cursor-pointer ${
+            className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
               currentScreen === 'library'
                 ? 'text-orange-600 font-bold scale-105'
                 : 'text-stone-400 hover:text-stone-600 font-medium'
@@ -172,10 +332,31 @@ export default function App() {
             id="nav-library-btn"
           >
             <BookOpen className="w-5 h-5" />
-            <span className="text-[11px]">Biblioteca</span>
+            <span className="text-[10px] sm:text-[11px]">Biblioteca</span>
+          </button>
+
+          <button
+            onClick={handleOpenShoppingList}
+            className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-all cursor-pointer relative ${
+              currentScreen === 'shopping_list'
+                ? 'text-orange-600 font-bold scale-105'
+                : 'text-stone-400 hover:text-stone-600 font-medium'
+            }`}
+            id="nav-shopping-list-btn"
+          >
+            <div className="relative">
+              <ShoppingCart className="w-5 h-5" />
+              {shoppingListItems.length > 0 && (
+                <span className="absolute -top-1.5 -right-2.5 bg-orange-600 text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                  {shoppingListItems.length > 99 ? '99+' : shoppingListItems.length}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] sm:text-[11px]">Compras</span>
           </button>
         </nav>
       </main>
     </div>
   );
 }
+

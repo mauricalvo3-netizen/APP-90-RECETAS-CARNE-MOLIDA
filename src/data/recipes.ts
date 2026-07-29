@@ -38,6 +38,18 @@ export function getRecipeImageSrc(recipe: SampleRecipe): string {
   return url;
 }
 
+export function getRecipeMinutes(recipe: SampleRecipe): number {
+  if (typeof recipe.tiempoMinutos === 'number' && !isNaN(recipe.tiempoMinutos) && recipe.tiempoMinutos > 0) {
+    return recipe.tiempoMinutos;
+  }
+  const text = recipe.tiempoTexto || recipe.prepTime || '';
+  const totalMatch = text.match(/=\s*(\d+)\s*min/i);
+  if (totalMatch) return parseInt(totalMatch[1], 10);
+  const minMatch = text.match(/(\d+)\s*min/i);
+  if (minMatch) return parseInt(minMatch[1], 10);
+  return 0;
+}
+
 export const SAMPLE_RECIPES: SampleRecipe[] = [
   {
     id: 1,
