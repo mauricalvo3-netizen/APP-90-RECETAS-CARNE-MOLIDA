@@ -63,16 +63,35 @@ export function HomeScreen({
 
   const handleInstallClick = async () => {
     const prompt = deferredPrompt || (window as any).__pwaDeferredPrompt;
+    const isInIframe = window.self !== window.top;
+
     if (prompt) {
       try {
-        prompt.prompt();
+        await prompt.prompt();
         const choiceResult = await prompt.userChoice;
         if (choiceResult && choiceResult.outcome === 'accepted') {
           setIsDismissed(true);
           setDeferredPrompt(null);
+          (window as any).__pwaDeferredPrompt = null;
         }
       } catch (err) {
         console.error('PWA install prompt error:', err);
+        if (isInIframe) {
+          window.open(window.location.href, '_blank');
+        }
+      }
+    } else {
+      if (isInIframe) {
+        // Open directly in a top-level window where the browser enables native PWA installation
+        window.open(window.location.href, '_blank');
+      } else if ('serviceWorker' in navigator) {
+        // Trigger SW ready check or attempt prompt if available
+        navigator.serviceWorker.ready.then(() => {
+          const recheckPrompt = (window as any).__pwaDeferredPrompt;
+          if (recheckPrompt) {
+            recheckPrompt.prompt();
+          }
+        });
       }
     }
   };
