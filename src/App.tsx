@@ -152,6 +152,8 @@ export default function App() {
     setCurrentScreen(previousScreen === 'recipe_detail' ? 'home' : previousScreen);
   };
 
+  const isDarkScreen = currentScreen === 'home' || currentScreen === 'recommendations';
+
   return (
     <div className="min-h-screen bg-stone-900 flex flex-col items-center justify-center p-0 sm:p-4 md:p-6 font-sans">
       {/* Optional top bar controls for preview frame */}
@@ -184,7 +186,11 @@ export default function App() {
           deviceFrame
             ? 'max-w-md min-h-[92vh] sm:min-h-[820px] sm:max-h-[880px] sm:rounded-[2.5rem] sm:border-[8px] sm:border-stone-800 sm:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)]'
             : 'max-w-md min-h-screen'
-        } bg-[#F8F6F2] bg-gradient-to-b from-[#FAF8F5] via-[#F8F6F2] to-[#F2EDE6] text-stone-800`}
+        } ${
+          isDarkScreen
+            ? 'bg-[#0D0D0D] text-stone-100'
+            : 'bg-[#F8F6F2] bg-gradient-to-b from-[#FAF8F5] via-[#F8F6F2] to-[#F2EDE6] text-stone-800'
+        }`}
       >
         {/* Subtle Decorative Warm Radial Background Elements */}
         <div className="absolute -top-24 -right-24 w-60 h-60 bg-orange-300/15 rounded-full blur-3xl pointer-events-none"></div>
@@ -308,12 +314,20 @@ export default function App() {
         </div>
 
         {/* Bottom Mobile Navigation Bar */}
-        <nav className="bg-[#F8F6F2] border-t border-stone-200/70 px-4 py-2.5 relative z-20 flex items-center justify-around shadow-[0_-4px_16px_rgba(0,0,0,0.03)]">
+        <nav
+          className={`w-full left-0 right-0 bottom-0 px-4 py-2.5 relative z-20 flex items-center justify-around transition-colors duration-300 ${
+            isDarkScreen
+              ? 'bg-[#0D0D0D] border-t border-stone-800/80 shadow-[0_-4px_16px_rgba(0,0,0,0.4)]'
+              : 'bg-[#F8F6F2] border-t border-stone-200/70 shadow-[0_-4px_16px_rgba(0,0,0,0.03)]'
+          }`}
+        >
           <button
             onClick={() => setCurrentScreen('home')}
             className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
               currentScreen === 'home'
                 ? 'text-[#FF5500] font-extrabold scale-105'
+                : isDarkScreen
+                ? 'text-stone-400 hover:text-stone-200 font-medium'
                 : 'text-stone-400 hover:text-stone-700 font-medium'
             }`}
             id="nav-home-btn"
@@ -327,6 +341,8 @@ export default function App() {
             className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
               currentScreen === 'recommendations'
                 ? 'text-[#FF5500] font-extrabold scale-105'
+                : isDarkScreen
+                ? 'text-stone-400 hover:text-stone-200 font-medium'
                 : 'text-stone-400 hover:text-stone-700 font-medium'
             }`}
             id="nav-assistant-btn"
@@ -340,6 +356,8 @@ export default function App() {
             className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
               currentScreen === 'library'
                 ? 'text-[#FF5500] font-extrabold scale-105'
+                : isDarkScreen
+                ? 'text-stone-400 hover:text-stone-200 font-medium'
                 : 'text-stone-400 hover:text-stone-700 font-medium'
             }`}
             id="nav-library-btn"
@@ -353,6 +371,8 @@ export default function App() {
             className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-all cursor-pointer relative ${
               currentScreen === 'shopping_list'
                 ? 'text-[#FF5500] font-extrabold scale-105'
+                : isDarkScreen
+                ? 'text-stone-400 hover:text-stone-200 font-medium'
                 : 'text-stone-400 hover:text-stone-700 font-medium'
             }`}
             id="nav-shopping-list-btn"
@@ -360,7 +380,9 @@ export default function App() {
             <div className="relative">
               <ShoppingCart className="w-5 h-5 stroke-[2.2]" />
               {shoppingListItems.length > 0 && (
-                <span className="absolute -top-1.5 -right-2.5 bg-[#FF5500] text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center border-2 border-[#F8F6F2] shadow-2xs">
+                <span className={`absolute -top-1.5 -right-2.5 bg-[#FF5500] text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center border-2 ${
+                  isDarkScreen ? 'border-[#0D0D0D]' : 'border-[#F8F6F2]'
+                } shadow-2xs`}>
                   {shoppingListItems.length > 99 ? '99+' : shoppingListItems.length}
                 </span>
               )}

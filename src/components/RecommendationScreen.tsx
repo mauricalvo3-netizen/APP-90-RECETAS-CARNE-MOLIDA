@@ -24,7 +24,7 @@ export function RecommendationScreen({ onBackToHome, onViewFullRecipe }: Recomme
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-between p-5 space-y-4 max-w-md mx-auto w-full bg-[#0D0D0D] text-stone-100 rounded-3xl relative overflow-y-auto custom-scrollbar">
+    <div className="flex-1 flex flex-col justify-between p-4 sm:p-5 space-y-4 w-full m-0 rounded-none overflow-x-hidden overflow-y-auto custom-scrollbar relative bg-[#0D0D0D] text-stone-100">
       {/* Subtle ambient orange lighting glow behind main card */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-br from-orange-600/20 via-amber-600/10 to-transparent blur-3xl pointer-events-none rounded-full" />
 

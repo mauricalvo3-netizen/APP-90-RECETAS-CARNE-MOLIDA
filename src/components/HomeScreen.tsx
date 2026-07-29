@@ -106,7 +106,7 @@ export function HomeScreen({
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-between p-5 space-y-4 max-w-md mx-auto w-full overflow-y-auto custom-scrollbar relative bg-stone-950 text-stone-100 rounded-3xl">
+    <div className="flex-1 flex flex-col justify-between p-4 sm:p-5 space-y-4 w-full m-0 rounded-none overflow-x-hidden overflow-y-auto custom-scrollbar relative bg-[#0D0D0D] text-stone-100">
       {/* Subtle ambient warm lighting background effect for top section */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-72 bg-gradient-to-b from-orange-600/20 via-amber-600/10 to-transparent blur-3xl pointer-events-none rounded-full" />
 
