@@ -226,6 +226,9 @@ export function HomeScreen({
               <div className="flex items-center gap-3 relative z-10 min-w-0">
                 <img
                   src="/icon.png"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = appLogo;
+                  }}
                   alt="90 Recetas"
                   referrerPolicy="no-referrer"
                   className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover shadow-md border border-amber-400/50 bg-stone-900 shrink-0"
