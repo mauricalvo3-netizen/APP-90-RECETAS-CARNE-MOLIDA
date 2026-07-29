@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, X, BookOpen } from 'lucide-react';
-import { SAMPLE_RECIPES, SampleRecipe } from '../data/recipes';
+import { SAMPLE_RECIPES, SampleRecipe, getRecipeImageSrc } from '../data/recipes';
 
 interface RecipeLibraryScreenProps {
   onSelectRecipe: (recipe: SampleRecipe) => void;
@@ -92,7 +92,7 @@ export function RecipeLibraryScreen({ onSelectRecipe }: RecipeLibraryScreenProps
                   {/* Recipe Photo Only */}
                   <div className="relative aspect-[4/3] w-full overflow-hidden bg-stone-100">
                     <img
-                      src={recipe.image}
+                      src={getRecipeImageSrc(recipe)}
                       alt={recipe.nombre || recipe.title}
                       referrerPolicy="no-referrer"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

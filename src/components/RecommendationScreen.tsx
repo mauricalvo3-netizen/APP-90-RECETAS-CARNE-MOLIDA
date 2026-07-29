@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, RefreshCw, ChefHat, Sparkles, Clock, Utensils } from 'lucide-react';
-import { SAMPLE_RECIPES, SampleRecipe } from '../data/recipes';
+import { SAMPLE_RECIPES, SampleRecipe, getRecipeImageSrc } from '../data/recipes';
 import appLogo from '../assets/images/app_logo_1785213158777.jpg';
 
 interface RecommendationScreenProps {
@@ -69,7 +69,7 @@ export function RecommendationScreen({ onBackToHome, onViewFullRecipe }: Recomme
             {/* Large Recipe Image */}
             <div className="relative aspect-[4/3] w-full overflow-hidden bg-stone-100">
               <img
-                src={currentRecipe.image}
+                src={getRecipeImageSrc(currentRecipe)}
                 alt={currentRecipe.nombre || currentRecipe.title}
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover"

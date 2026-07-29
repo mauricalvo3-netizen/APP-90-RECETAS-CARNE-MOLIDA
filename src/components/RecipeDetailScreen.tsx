@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, Clock, Users, ChefHat, Check, Sparkles } from 'lucide-react';
-import { SampleRecipe } from '../data/recipes';
+import { SampleRecipe, getRecipeImageSrc } from '../data/recipes';
 
 interface RecipeDetailScreenProps {
   recipe: SampleRecipe;
@@ -60,7 +60,7 @@ export function RecipeDetailScreen({ recipe, onBack }: RecipeDetailScreenProps) 
           className="relative rounded-3xl overflow-hidden shadow-lg border border-amber-200/80 aspect-[4/3] bg-stone-100"
         >
           <img
-            src={recipe.image}
+            src={getRecipeImageSrc(recipe)}
             alt={name}
             referrerPolicy="no-referrer"
             className="w-full h-full object-cover"
