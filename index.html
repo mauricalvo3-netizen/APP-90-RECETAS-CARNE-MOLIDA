@@ -13,25 +13,25 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <script>
       window.__pwaDeferredPrompt = null;
-      window.__pwaAutoPromptPending = false;
+      window.__autoTriggerInstall = false;
 
       var urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('autoinstall') === '1' || urlParams.get('install') === '1') {
-        window.__pwaAutoPromptPending = true;
+        window.__autoTriggerInstall = true;
       }
 
       function handlePwaPrompt(e) {
         e.preventDefault();
         window.__pwaDeferredPrompt = e;
-        if (window.__onPwaInstallable) {
+        if (typeof window.__onPwaInstallable === 'function') {
           window.__onPwaInstallable(e);
         }
-        if (window.__pwaAutoPromptPending) {
-          window.__pwaAutoPromptPending = false;
+        if (window.__autoTriggerInstall) {
+          window.__autoTriggerInstall = false;
           try {
             e.prompt();
           } catch (err) {
-            console.log('Auto prompt error:', err);
+            console.log('Auto install prompt:', err);
           }
         }
       }
