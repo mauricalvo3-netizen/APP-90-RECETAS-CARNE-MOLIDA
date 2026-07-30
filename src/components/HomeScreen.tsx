@@ -55,20 +55,33 @@ export function HomeScreen({
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Auto-prompt if opened with autoinstall flag from iframe
+    // Auto-prompt if opened with autoinstall flag
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('autoinstall') === '1' || urlParams.get('install') === '1') {
-      const attemptAutoPrompt = async () => {
+      const triggerAutoPrompt = async () => {
         const p = (window as any).__pwaDeferredPrompt;
         if (p) {
           try {
             await p.prompt();
           } catch (err) {
-            console.log('Auto prompt waiting for gesture:', err);
+            console.log('Auto prompt waiting for user gesture', err);
           }
         }
       };
-      attemptAutoPrompt();
+      triggerAutoPrompt();
+      // Also register a one-time window click listener in case browser required direct gesture
+      const handleFirstClick = async () => {
+        const p = (window as any).__pwaDeferredPrompt;
+        if (p) {
+          try {
+            await p.prompt();
+          } catch (e) {
+            console.log(e);
+          }
+        }
+        window.removeEventListener('click', handleFirstClick);
+      };
+      window.addEventListener('click', handleFirstClick);
     }
 
     return () => {
@@ -81,8 +94,7 @@ export function HomeScreen({
     const isInIframe = window.self !== window.top;
 
     if (isInIframe) {
-      // Browsers block native PWA install prompts inside preview iframes.
-      // Opening in top-level window allows the browser to trigger 1-click PWA installation.
+      // In preview iframe, open in top-level window where browser enables native 1-click PWA prompt
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.set('autoinstall', '1');
       window.open(newUrl.toString(), '_blank');
@@ -100,15 +112,7 @@ export function HomeScreen({
           (window as any).__pwaDeferredPrompt = null;
         }
       } catch (err) {
-        console.error('PWA install prompt error:', err);
-      }
-    } else {
-      const userAgent = window.navigator.userAgent.toLowerCase();
-      const isIOS = /iphone|ipad|ipod/.test(userAgent);
-      if (isIOS) {
-        alert('Para instalar en tu iPhone/iPad:\n1. Toca el botón Compartir en Safari (abajo).\n2. Selecciona "Agregar a inicio".');
-      } else {
-        alert('Para instalar en tu dispositivo:\nAbre el menú de tu navegador (⋮) y selecciona "Instalar aplicación" o "Agregar a pantalla principal".');
+        console.error('PWA install error:', err);
       }
     }
   };
