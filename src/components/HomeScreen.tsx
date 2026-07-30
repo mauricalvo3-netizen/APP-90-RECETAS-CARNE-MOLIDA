@@ -22,8 +22,13 @@ export function HomeScreen({
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isStandalone, setIsStandalone] = useState<boolean>(false);
   const [isDismissed, setIsDismissed] = useState<boolean>(false);
+  const [showGuideModal, setShowGuideModal] = useState<boolean>(false);
+  const [isIOS, setIsIOS] = useState<boolean>(false);
 
   useEffect(() => {
+    const ua = window.navigator.userAgent.toLowerCase();
+    setIsIOS(/iphone|ipad|ipod/.test(ua));
+
     // Check if running as standalone PWA
     const standaloneCheck =
       window.matchMedia('(display-mode: standalone)').matches ||
@@ -113,8 +118,7 @@ export function HomeScreen({
     const isInIframe = window.self !== window.top;
 
     if (isInIframe) {
-      // Browsers block native PWA install prompts inside preview iframes for security.
-      // Opening in top-level window allows the browser to trigger 1-click PWA installation immediately.
+      // Inside preview frame, open in full browser tab for native 1-click PWA prompt
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.set('autoinstall', '1');
       window.open(newUrl.toString(), '_blank');
@@ -133,9 +137,10 @@ export function HomeScreen({
         }
       } catch (err) {
         console.error('PWA install error:', err);
+        setShowGuideModal(true);
       }
     } else {
-      (window as any).__pwaAutoPromptPending = true;
+      setShowGuideModal(true);
     }
   };
 
@@ -314,6 +319,98 @@ export function HomeScreen({
           )}
         </AnimatePresence>
       </motion.div>
+
+      {/* Modal Guía de Instalación PWA */}
+      <AnimatePresence>
+        {showGuideModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShowGuideModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#14100E] border-2 border-amber-500/50 rounded-3xl p-5 sm:p-6 max-w-sm w-full text-stone-100 shadow-[0_20px_50px_rgba(0,0,0,0.9)] relative overflow-hidden"
+            >
+              <button
+                onClick={() => setShowGuideModal(false)}
+                className="absolute top-4 right-4 text-stone-400 hover:text-white p-1 rounded-full bg-stone-800/80 hover:bg-stone-700 transition-colors"
+                aria-label="Cerrar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="relative">
+                  <div className="absolute -inset-2 bg-gradient-to-r from-orange-600 to-amber-500 rounded-2xl blur-md opacity-70"></div>
+                  <img
+                    src="/icon.png"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = appLogo;
+                    }}
+                    alt="90 Recetas"
+                    referrerPolicy="no-referrer"
+                    className="relative w-16 h-16 rounded-2xl object-cover border border-amber-400/60 shadow-xl"
+                  />
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-extrabold text-white">Instalar 90 Recetas</h3>
+                  <p className="text-xs text-amber-400 font-medium mt-1">
+                    Instala la app oficial en tu inicio para acceso rápido en 1 clic.
+                  </p>
+                </div>
+
+                {isIOS ? (
+                  <div className="w-full bg-stone-900/90 border border-amber-500/30 rounded-2xl p-4 text-left space-y-2.5 text-xs text-stone-200">
+                    <p className="font-bold text-amber-300">En tu iPhone / iPad (Safari):</p>
+                    <div className="flex items-start gap-2">
+                      <span className="bg-amber-500/20 text-amber-400 font-extrabold px-2 py-0.5 rounded-full shrink-0">1</span>
+                      <span>Toca el botón <strong>Compartir</strong> <span className="inline-block px-1.5 py-0.5 bg-stone-800 rounded border border-stone-700">⎋</span> en la barra inferior de Safari.</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="bg-amber-500/20 text-amber-400 font-extrabold px-2 py-0.5 rounded-full shrink-0">2</span>
+                      <span>Desplázate hacia abajo y selecciona <strong>"Agregar al inicio"</strong> ➕.</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="bg-amber-500/20 text-amber-400 font-extrabold px-2 py-0.5 rounded-full shrink-0">3</span>
+                      <span>Presiona <strong>"Agregar"</strong> arriba a la derecha.</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full bg-stone-900/90 border border-amber-500/30 rounded-2xl p-4 text-left space-y-2.5 text-xs text-stone-200">
+                    <p className="font-bold text-amber-300">Instalación en Android / PC:</p>
+                    <div className="flex items-start gap-2">
+                      <span className="bg-amber-500/20 text-amber-400 font-extrabold px-2 py-0.5 rounded-full shrink-0">1</span>
+                      <span>Presiona el botón de instalación si tu navegador muestra la ventana emergente.</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="bg-amber-500/20 text-amber-400 font-extrabold px-2 py-0.5 rounded-full shrink-0">2</span>
+                      <span>O abre el menú de tu navegador (<strong className="text-amber-300">⋮</strong> o <strong className="text-amber-300">⚙</strong>) en la parte superior.</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="bg-amber-500/20 text-amber-400 font-extrabold px-2 py-0.5 rounded-full shrink-0">3</span>
+                      <span>Selecciona <strong>"Instalar aplicación"</strong> o <strong>"Agregar a pantalla principal"</strong>.</span>
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => setShowGuideModal(false)}
+                  className="w-full bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-all text-sm"
+                >
+                  Entendido
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
