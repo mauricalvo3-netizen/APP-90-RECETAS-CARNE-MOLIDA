@@ -37,39 +37,58 @@ export function HomeScreen({
       setIsDismissed(true);
     }
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const isAutoInstall = urlParams.get('autoinstall') === '1' || urlParams.get('install') === '1';
+
+    if (isAutoInstall) {
+      (window as any).__pwaAutoPromptPending = true;
+    }
+
     // Capture early beforeinstallprompt if triggered before React mounted
-    if ((window as any).__pwaDeferredPrompt) {
-      setDeferredPrompt((window as any).__pwaDeferredPrompt);
+    const earlyPrompt = (window as any).__pwaDeferredPrompt;
+    if (earlyPrompt) {
+      setDeferredPrompt(earlyPrompt);
+      if (isAutoInstall || (window as any).__pwaAutoPromptPending) {
+        (window as any).__pwaAutoPromptPending = false;
+        try {
+          earlyPrompt.prompt();
+        } catch (err) {
+          console.log('Auto prompt error:', err);
+        }
+      }
     }
 
     // Global callback listener
     (window as any).__onPwaInstallable = (e: any) => {
       setDeferredPrompt(e);
+      if ((window as any).__pwaAutoPromptPending) {
+        (window as any).__pwaAutoPromptPending = false;
+        try {
+          e.prompt();
+        } catch (err) {
+          console.log('Auto prompt error:', err);
+        }
+      }
     };
 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
       (window as any).__pwaDeferredPrompt = e;
+      if ((window as any).__pwaAutoPromptPending) {
+        (window as any).__pwaAutoPromptPending = false;
+        try {
+          (e as any).prompt();
+        } catch (err) {
+          console.log('Auto prompt error:', err);
+        }
+      }
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Auto-prompt if opened with autoinstall flag
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('autoinstall') === '1' || urlParams.get('install') === '1') {
-      const triggerAutoPrompt = async () => {
-        const p = (window as any).__pwaDeferredPrompt;
-        if (p) {
-          try {
-            await p.prompt();
-          } catch (err) {
-            console.log('Auto prompt waiting for user gesture', err);
-          }
-        }
-      };
-      triggerAutoPrompt();
-      // Also register a one-time window click listener in case browser required direct gesture
+    // One-time fallback click listener if opened via autoinstall flag
+    if (isAutoInstall) {
       const handleFirstClick = async () => {
         const p = (window as any).__pwaDeferredPrompt;
         if (p) {
@@ -94,7 +113,8 @@ export function HomeScreen({
     const isInIframe = window.self !== window.top;
 
     if (isInIframe) {
-      // In preview iframe, open in top-level window where browser enables native 1-click PWA prompt
+      // Browsers block native PWA install prompts inside preview iframes for security.
+      // Opening in top-level window allows the browser to trigger 1-click PWA installation immediately.
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.set('autoinstall', '1');
       window.open(newUrl.toString(), '_blank');
@@ -114,6 +134,8 @@ export function HomeScreen({
       } catch (err) {
         console.error('PWA install error:', err);
       }
+    } else {
+      (window as any).__pwaAutoPromptPending = true;
     }
   };
 

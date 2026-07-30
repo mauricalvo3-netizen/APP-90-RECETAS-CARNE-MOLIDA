@@ -13,13 +13,31 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <script>
       window.__pwaDeferredPrompt = null;
-      window.addEventListener('beforeinstallprompt', function(e) {
+      window.__pwaAutoPromptPending = false;
+
+      var urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('autoinstall') === '1' || urlParams.get('install') === '1') {
+        window.__pwaAutoPromptPending = true;
+      }
+
+      function handlePwaPrompt(e) {
         e.preventDefault();
         window.__pwaDeferredPrompt = e;
         if (window.__onPwaInstallable) {
           window.__onPwaInstallable(e);
         }
-      });
+        if (window.__pwaAutoPromptPending) {
+          window.__pwaAutoPromptPending = false;
+          try {
+            e.prompt();
+          } catch (err) {
+            console.log('Auto prompt error:', err);
+          }
+        }
+      }
+
+      window.addEventListener('beforeinstallprompt', handlePwaPrompt);
+
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
           navigator.serviceWorker.register('/sw.js').catch(function(err) {
