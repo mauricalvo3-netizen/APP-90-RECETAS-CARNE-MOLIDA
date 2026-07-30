@@ -78,9 +78,18 @@ export function HomeScreen({
   }, []);
 
   const handleInstallClick = async () => {
-    const prompt = deferredPrompt || (window as any).__pwaDeferredPrompt;
     const isInIframe = window.self !== window.top;
 
+    if (isInIframe) {
+      // Browsers block native PWA install prompts inside preview iframes.
+      // Opening in top-level window allows the browser to trigger 1-click PWA installation.
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('autoinstall', '1');
+      window.open(newUrl.toString(), '_blank');
+      return;
+    }
+
+    const prompt = deferredPrompt || (window as any).__pwaDeferredPrompt;
     if (prompt) {
       try {
         await prompt.prompt();
@@ -92,26 +101,14 @@ export function HomeScreen({
         }
       } catch (err) {
         console.error('PWA install prompt error:', err);
-        if (isInIframe) {
-          const newUrl = new URL(window.location.href);
-          newUrl.searchParams.set('autoinstall', '1');
-          window.open(newUrl.toString(), '_blank');
-        }
       }
-    } else if (isInIframe) {
-      // In preview iframe, open in top-level window where browser natively triggers PWA prompt
-      const newUrl = new URL(window.location.href);
-      newUrl.searchParams.set('autoinstall', '1');
-      window.open(newUrl.toString(), '_blank');
     } else {
-      // Fallback if beforeinstallprompt hasn't fired yet on standalone tab
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.ready.then(() => {
-          const recheckedPrompt = (window as any).__pwaDeferredPrompt;
-          if (recheckedPrompt) {
-            recheckedPrompt.prompt();
-          }
-        });
+      const userAgent = window.navigator.userAgent.toLowerCase();
+      const isIOS = /iphone|ipad|ipod/.test(userAgent);
+      if (isIOS) {
+        alert('Para instalar en tu iPhone/iPad:\n1. Toca el botón Compartir en Safari (abajo).\n2. Selecciona "Agregar a inicio".');
+      } else {
+        alert('Para instalar en tu dispositivo:\nAbre el menú de tu navegador (⋮) y selecciona "Instalar aplicación" o "Agregar a pantalla principal".');
       }
     }
   };
