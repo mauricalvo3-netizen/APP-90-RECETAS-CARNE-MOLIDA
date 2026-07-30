@@ -1,8 +1,10 @@
 {
+  "id": "/",
   "name": "90 Recetas",
   "short_name": "90 Recetas",
-  "description": "Descubre en segundos qué cocinar hoy con carne molida.",
+  "description": "Recetas paso a paso con carne molida.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0D0D0D",
@@ -12,25 +14,13 @@
       "src": "/icon.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ]
 }
