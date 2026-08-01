@@ -40,49 +40,21 @@ export function HomeScreen({
     const urlParams = new URLSearchParams(window.location.search);
     const isAutoInstall = urlParams.get('autoinstall') === '1' || urlParams.get('install') === '1';
 
-    if (isAutoInstall) {
-      (window as any).__autoTriggerInstall = true;
-    }
-
     // Capture early beforeinstallprompt if triggered before React mounted
-    const earlyPrompt = (window as any).__pwaDeferredPrompt;
-    if (earlyPrompt) {
-      setDeferredPrompt(earlyPrompt);
-      if (isAutoInstall || (window as any).__autoTriggerInstall) {
-        (window as any).__autoTriggerInstall = false;
-        try {
-          earlyPrompt.prompt();
-        } catch (err) {
-          console.log('Auto prompt error:', err);
-        }
-      }
+    if ((window as any).__pwaDeferredPrompt) {
+      setDeferredPrompt((window as any).__pwaDeferredPrompt);
     }
 
     // Global callback listener
     (window as any).__onPwaInstallable = (e: any) => {
       setDeferredPrompt(e);
-      if ((window as any).__autoTriggerInstall) {
-        (window as any).__autoTriggerInstall = false;
-        try {
-          e.prompt();
-        } catch (err) {
-          console.log('Auto prompt error:', err);
-        }
-      }
+      (window as any).__pwaDeferredPrompt = e;
     };
 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
       (window as any).__pwaDeferredPrompt = e;
-      if ((window as any).__autoTriggerInstall) {
-        (window as any).__autoTriggerInstall = false;
-        try {
-          (e as any).prompt();
-        } catch (err) {
-          console.log('Auto prompt error:', err);
-        }
-      }
     };
 
     const handleAppInstalled = () => {
@@ -95,20 +67,22 @@ export function HomeScreen({
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
-    // One-time fallback click listener if opened via autoinstall parameter
+    // If opened with autoinstall parameter in a main tab, trigger prompt on the very first user gesture
     if (isAutoInstall) {
-      const handleFirstClick = async () => {
+      const handleUserGesture = async () => {
         const p = (window as any).__pwaDeferredPrompt;
         if (p) {
           try {
             await p.prompt();
-          } catch (e) {
-            console.log(e);
+          } catch (err) {
+            console.log('Gesture prompt error:', err);
           }
         }
-        window.removeEventListener('click', handleFirstClick);
+        window.removeEventListener('click', handleUserGesture);
+        window.removeEventListener('touchstart', handleUserGesture);
       };
-      window.addEventListener('click', handleFirstClick);
+      window.addEventListener('click', handleUserGesture);
+      window.addEventListener('touchstart', handleUserGesture);
     }
 
     return () => {
@@ -123,7 +97,7 @@ export function HomeScreen({
 
     if (isInIframe) {
       // Browsers block native PWA install prompts inside preview iframes.
-      // Opening in top-level window allows the browser to trigger 1-click PWA installation directly.
+      // Opening in top-level window enables the native 1-click PWA prompt.
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.set('autoinstall', '1');
       window.open(newUrl.toString(), '_blank');
@@ -144,7 +118,19 @@ export function HomeScreen({
         console.error('PWA install error:', err);
       }
     } else {
-      (window as any).__autoTriggerInstall = true;
+      // Check if iOS Safari
+      const isIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+      if (isIOS && (navigator as any).share) {
+        try {
+          await (navigator as any).share({
+            title: '90 Recetas',
+            text: 'Instala 90 Recetas en tu pantalla de inicio',
+            url: window.location.href,
+          });
+        } catch (e) {
+          console.log('Share canceled:', e);
+        }
+      }
     }
   };
 

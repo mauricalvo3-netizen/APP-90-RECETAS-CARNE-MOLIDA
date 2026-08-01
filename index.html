@@ -13,12 +13,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <script>
       window.__pwaDeferredPrompt = null;
-      window.__autoTriggerInstall = false;
-
-      var urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('autoinstall') === '1' || urlParams.get('install') === '1') {
-        window.__autoTriggerInstall = true;
-      }
 
       function handlePwaPrompt(e) {
         e.preventDefault();
@@ -26,22 +20,16 @@
         if (typeof window.__onPwaInstallable === 'function') {
           window.__onPwaInstallable(e);
         }
-        if (window.__autoTriggerInstall) {
-          window.__autoTriggerInstall = false;
-          try {
-            e.prompt();
-          } catch (err) {
-            console.log('Auto install prompt:', err);
-          }
-        }
       }
 
       window.addEventListener('beforeinstallprompt', handlePwaPrompt);
 
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js').catch(function(err) {
-            console.log('SW reg failed:', err);
+          navigator.serviceWorker.register('/sw.js', { scope: '/' }).then(function(reg) {
+            console.log('SW registrado exitosamente con scope:', reg.scope);
+          }).catch(function(err) {
+            console.log('SW reg error:', err);
           });
         });
       }
